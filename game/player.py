@@ -1,12 +1,12 @@
 import collections
 import itertools
 import random
+from strategy import Strategy
 
 class Player():
     # strategy is a function
     def __init__(self, strategy):
-        # is this how you set functions
-        self.get_action = strategy
+        self.getAction = strategy
 
 
     def setHoleCards(self, cards):
@@ -24,12 +24,43 @@ class Player():
     # def receive_river(self):
     #     self.cards.append(self.deck.get_river()[0])
 
-    def getAction(self, state):
+    def getAction(self, env_state):
         pass
 
     def fold(self):
         pass
+
     def call(self):
         pass
-    def raiseAmount(self):
+
+    def raiseAmount(self, amount):
         pass
+
+
+
+if __name__ == '__main__':
+
+    random_player = Player(Strategy.randomStrategy)
+    
+    histRandom = {"Call": 0, "Fold": 0, "Raise": 0}
+    for x in range(100000):
+        action = random_player.getAction()
+        histRandom[action] += 1.0 / 100000
+
+    aggresive_player = Player(Strategy.aggresiveStrategy)
+    
+    histAggresive = {"Call": 0, "Fold": 0, "Raise": 0}
+    for x in range(100000):
+        action = aggresive_player.getAction()
+        histAggresive[action] += 1
+
+    try:
+        for action in histRandom:
+            assert histRandom[action] < 0.35
+        
+        assert histAggresive['Raise'] / 100000 == 1
+
+    except AssertionError as e:
+        raise 
+    else:
+        print "All tests passed!"
