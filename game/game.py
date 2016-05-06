@@ -14,7 +14,7 @@ from strategy import Strategy
 class Game:
     # players is a list of players
 
-    def __init__(self, players, small_blind=0, big_blind=0, buy_in=100, raise_amounts=1, starting_card_count=2):
+    def __init__(self, players, small_blind=0, big_blind=0, buy_in=100, raise_amounts=1, starting_card_count=2, community_card_count=5):
 
         # Constructor parameters
         self.players = players
@@ -23,6 +23,7 @@ class Game:
         self.buy_in = buy_in
         self.raise_amounts = raise_amounts
         self.starting_card_count = starting_card_count
+        self.community_card_count = community_card_count
 
         self.player_count = len(players)
 
@@ -120,6 +121,8 @@ class Game:
             if self.player_states[player][2] != 'Fold':
                 self.ingame_players.append(player)
 
+        return self.ingame_players
+
     def updatePlayerEarnings(self):
         # Winner
         if len(self.ingame_players) == 1:
@@ -136,7 +139,15 @@ class Game:
                     self.player_states[player][3] -= loss
                     player.earnings -= loss
 
-    def playGame(self, num_rounds):
+    def showCommunityCards(self):
+
+        community_cards = self.deck.getFlop(number_of_cards=5)
+
+        for player in self.ingame_players:
+            player.setCommunityCards(community_cards)
+
+
+    def playGame(self):
 
         self.initializePlayersStates()
         self.setBlinds()
@@ -146,11 +157,14 @@ class Game:
         self.updatePlayerEarnings()
 
         # Move onto post flop round
-        # TODO: Deal community cards now if more than one player in
-        # in_game_players. no more raises
+        if len(self.ingame_players) > 1:
 
-        # End game
-        self.updatePlayerEarnings()
+            self.showCommunityCards()
+            
+            # TODO: Compare cards
+
+            # End game
+            self.updatePlayerEarnings()
 
 
 def main():

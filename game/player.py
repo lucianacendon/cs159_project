@@ -12,7 +12,12 @@ class Player():
         self.earnings = 0
 
     def setHoleCards(self, cards):
-        self.cards = cards
+        assert len(cards) == 2
+        self.hole_cards = cards
+
+    def setCommunityCards(self, cards):
+        assert len(cards) == 5
+        self.community_cards = cards 
 
     # these will be done in the simulator
     # def receive_flop(self):
@@ -41,12 +46,12 @@ class Player():
 
 if __name__ == '__main__':
 
-    random_player = Player(Strategy.randomStrategy)
+    # random_player = Player(Strategy.randomStrategy)
 
-    histRandom = {"Call": 0, "Fold": 0, "Raise": 0}
-    for x in range(100000):
-        action = random_player.getAction()
-        histRandom[action] += 1.0 / 100000
+    # histRandom = {"Call": 0, "Fold": 0, "Raise": 0}
+    # for x in range(100000):
+    #     action = random_player.getAction()
+    #     histRandom[action] += 1.0 / 100000
 
     aggresive_player = Player(Strategy.aggresiveStrategy)
 
@@ -56,8 +61,8 @@ if __name__ == '__main__':
         histAggresive[action] += 1
 
     try:
-        for action in histRandom:
-            assert histRandom[action] < 0.35
+        # for action in histRandom:
+        #     assert histRandom[action] < 0.35
 
         assert histAggresive['Raise'] / 100000 == 1
 
