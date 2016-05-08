@@ -32,7 +32,7 @@ class Game:
 
         # Initialize deck
         self.deck = Deck()
-        self.curr_bet = 0   # call this to remain in the game
+        self.call = 0   # call this to remain in the game
         self.dealer = 0          # position of dealer chip
         self.pot = 0
 
@@ -64,7 +64,7 @@ class Game:
             state[2] = None
 
             self.pot += self.small_blind
-            self.curr_bet = self.small_blind
+            self.call = self.small_blind
 
         if self.big_blind > 0:
 
@@ -75,9 +75,9 @@ class Game:
             state[2] = None
 
             self.pot += self.big_blind
-            self.curr_bet = self.big_blind
+            self.call = self.big_blind
 
-        return self.pot, self.curr_bet
+        return self.pot, self.call
 
     
     def placeBets(self):
@@ -87,21 +87,20 @@ class Game:
         curr_state = self.player_states[self.players[curr_player_index]]
 
         # players bet until everyone either calls or folds
-        # TODO: Infinite loop occurs occasionally. Fix
-        while not (curr_state[2] == 'Call' and curr_state[1] == self.curr_bet):
-
-            if curr_state[2] != 'Fold':
+        while not (curr_state[2] == 'C' and curr_state[1] == self.call):
+            if curr_state[2] != 'F':
                 action = self.players[curr_player_index].getAction(
                     player=self.players[curr_player_index],
                     env_state=self.player_states,
+                    call=self.call,
                     raise_amt=5)
 
                 # here we could also potentially set the bet amount to 0
-                if action == 'Fold':
-                    curr_state[2] = 'Fold'
+                if action == 'F':
+                    curr_state[2] = 'F'
 
-                if action == 'Call':
-                    diff = self.curr_bet - curr_state[1]
+                if action == 'C':
+                    diff = self.call - curr_state[1]
 
                     # your current funds must be at least the amount you bet
                     assert(curr_state[0] >= diff)
@@ -109,22 +108,22 @@ class Game:
                     curr_state[0] -= diff
                     curr_state[1] += diff
                     self.pot += diff
-                    curr_state[2] = 'Call'
+                    curr_state[2] = 'C'
 
                 # need to decide raising conventions
-                if action == 'Raise':
+                if action == 'R':
                     raise_amt = 5
 
                     # in real poker you can raise even if you haven't called (i.e. calling and raising above the call in one move)
-                    diff = (self.curr_bet - curr_state[1]) + raise_amt
+                    diff = (self.call - curr_state[1]) + raise_amt
                     assert(curr_state[0] >= diff) # TODO: this returns an error sometimes, need to fix
 
                     curr_state[0] -= diff
                     curr_state[1] += diff
                     self.pot += diff
 
-                    self.curr_bet += raise_amt
-                    curr_state[2] = 'Raise'
+                    self.call += raise_amt
+                    curr_state[2] = 'R'
 
             # move to next player (array viewed as circular table)
             i += 1
@@ -137,7 +136,7 @@ class Game:
         self.ingame_players = []
         for player in self.player_states:
 
-            if self.player_states[player][2] != 'Fold':
+            if self.player_states[player][2] != 'F':
                 self.ingame_players.append(player)
 
         return self.ingame_players
@@ -288,7 +287,7 @@ def main():
         call_count = 0
         for i, key in enumerate(game.player_states):
             assert game.players[i] is key
-            call_count += game.player_states[key][2] == 'Call'
+            call_count += game.player_states[key][2] == 'C'
 
         assert call_count == len(game.ingame_players)
 
