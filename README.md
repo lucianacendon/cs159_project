@@ -4,6 +4,6 @@ The general outline for this project is located [here](https://docs.google.com/d
 
 
 ### TODO:
-- [] card hand evaluator
+- [x] card hand evaluator
 - [] opponent strategy
 - [x] post-flop game - modified player.py and game.py

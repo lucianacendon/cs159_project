@@ -3,6 +3,9 @@ import itertools
 import random
 from strategy import Strategy
 
+from deuces import Card
+from deuces import Evaluator
+
 
 class Player():
     # strategy is a function
@@ -19,6 +22,21 @@ class Player():
         assert len(cards) == 5
         self.community_cards = cards 
 
+    # return score of best hand made up of hole cards and community cards
+    def getHandScore(self):
+        evaluator = Evaluator()
+        hand = []
+        board = []
+
+        for c in self.hole_cards:
+            hand.append(Card.new(c))
+
+        for c in self.community_cards:
+            board.append(Card.new(c))
+
+        return evaluator.evaluate(board, hand)
+
+        
     # these will be done in the simulator
     # def receive_flop(self):
     #     flop_cards = self.deck.get_flop()

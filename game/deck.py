@@ -6,16 +6,17 @@ import random
 class Deck():
 
     def __init__(self):
-        self.SUIT_LIST = ("Hearts", "Spades", "Diamonds", "Clubs")
+        self.SUIT_LIST = ("h", "d", "c", "s")
         self.NUMERAL_LIST = ("2", "3", "4", "5", "6", "7",
-                             "8", "9", "10", "Jack", "Queen", "King", "Ace")
+                             "8", "9", "T", "J", "Q", "K", "A")
 
         self.available_cards = set()
 
         # Equivalent to nested for-loops in a generator expression:
         for numeral, suit in itertools.product(self.NUMERAL_LIST, self.SUIT_LIST):
 
-            self.available_cards.add((numeral, suit))
+            # self.available_cards.add((numeral, suit))
+            self.available_cards.add((numeral +  suit))
 
     def getCard(self):
 

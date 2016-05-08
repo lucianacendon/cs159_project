@@ -11,9 +11,9 @@ class Hand():
         assert len(card_list) != 0
 
         self.card_list = card_list
-        self.SUIT_LIST = ("Hearts", "Spades", "Diamonds", "Clubs")
+        self.SUIT_LIST = ("h", "d", "c", "s")
         self.NUMERAL_LIST = ("2", "3", "4", "5", "6", "7",
-                             "8", "9", "10", "Jack", "Queen", "King", "Ace")
+                             "8", "9", "T", "J", "Q", "K", "A")
         self.description = self.getDescription()
 
     def getDescription(self):
@@ -54,7 +54,7 @@ class Hand():
                                for x in num_dict.keys()])
                 if int(max_num) - int(min_num) == 4:
                     straight = True
-                low_straight = set(("Ace", "2", "3", "4", "5"))
+                low_straight = set(("A", "2", "3", "4", "5"))
                 if not set(num_dict.keys()).difference(low_straight):
                     straight = True
                 if straight and not flush:
@@ -72,44 +72,44 @@ class Hand():
 
 if __name__ == '__main__':
 
-    pair1 = [('2', 'Hearts'), ('2', 'Diamonds')]
-    pair2 = [('2', 'Hearts'), ('2', 'Diamonds'), ('3', 'Hearts')]
-    pair3 = [('2', 'Hearts'), ('2', 'Diamonds'),
-             ('3', 'Hearts'), ('4', 'Hearts')]
-    pair4 = [('2', 'Hearts'), ('2', 'Diamonds'),
-             ('3', 'Hearts'), ('4', 'Hearts'), ('5', 'Hearts')]
+    pair1 = ['2h', '2d']
+    pair2 = ['2h', '2d', '3h']
+    pair3 = ['2h', '2d',
+             '3h', '4h']
+    pair4 = ['2h', '2d',
+             '3h', '4h', '5h']
 
-    two_pairs1 = [('2', 'Hearts'), ('2', 'Diamonds'),
-                  ('Ace', 'Hearts'), ('Ace', 'Diamonds')]
-    two_pairs2 = [('2', 'Hearts'), ('2', 'Diamonds'),
-                  ('Ace', 'Hearts'), ('Ace', 'Diamonds'), ('5', 'Hearts')]
+    two_pairs1 = ['2h', '2d',
+                  'Ah', 'Ad']
+    two_pairs2 = ['2h', '2d',
+                  'Ah', 'Ad', '5h']
 
-    three_of_a_kind1 = [('2', 'Hearts'), ('Ace', 'Spades'),
-                        ('Ace', 'Hearts'), ('Ace', 'Diamonds')]
-    three_of_a_kind2 = [('2', 'Hearts'), ('Ace', 'Spades'),
-                        ('Ace', 'Hearts'), ('Ace', 'Diamonds'), ('5', 'Hearts')]
+    three_of_a_kind1 = ['2h', 'As',
+                        'Ah', 'Ad']
+    three_of_a_kind2 = ['2h', 'As',
+                        'Ah', 'Ad', '5h']
 
-    four_of_a_kind1 = [('Ace', 'Hearts'), ('Ace', 'Spades'),
-                       ('Ace', 'Hearts'), ('Ace', 'Diamonds')]
-    four_of_a_kind2 = [('Ace', 'Hearts'), ('Ace', 'Spades'),
-                       ('Ace', 'Hearts'), ('Ace', 'Diamonds'), ('5', 'Hearts')]
+    four_of_a_kind1 = ['Ah', 'As',
+                       'Ah', 'Ad']
+    four_of_a_kind2 = ['Ah', 'As',
+                       'Ah', 'Ad', '5h']
 
-    straight1 = [('Ace', 'Hearts'), ('2', 'Spades'),
-                 ('3', 'Hearts'), ('4', 'Diamonds'), ('5', 'Hearts')]
-    straight2 = [('2', 'Hearts'), ('3', 'Spades'),
-                 ('4', 'Hearts'), ('5', 'Diamonds'), ('6', 'Hearts')]
-    straight3 = [('10', 'Hearts'), ('Jack', 'Spades'),
-                 ('Queen', 'Hearts'), ('King', 'Diamonds'), ('Ace', 'Hearts')]
+    straight1 = ['Ah', '2s',
+                 '3h', '4d', '5h']
+    straight2 = ['2h', '3s',
+                 '4h', '5d', '6h']
+    straight3 = ['Th', 'Js',
+                 'Qh', 'Kd', 'Ah']
 
-    flush1 = [('10', 'Hearts'), ('2', 'Hearts'),
-              ('3', 'Hearts'), ('4', 'Hearts'), ('5', 'Hearts')]
+    flush1 = ['Th', '2h',
+              '3h', '4h', '5h']
 
-    straight_flush1 = [('10', 'Hearts'), ('Jack', 'Hearts'),
-                       ('Queen', 'Hearts'), ('King', 'Hearts'), ('Ace', 'Hearts')]
-    straight_flush2 = [('Ace', 'Hearts'), ('2', 'Hearts'),
-                       ('3', 'Hearts'), ('4', 'Hearts'), ('5', 'Hearts')]
-    straight_flush3 = [('2', 'Hearts'), ('3', 'Hearts'),
-                       ('4', 'Hearts'), ('5', 'Hearts'), ('6', 'Hearts')]
+    straight_flush1 = ['Th', 'Jh',
+                       'Qh', 'Kh', 'Ah']
+    straight_flush2 = ['Ah', '2h',
+                       '3h', '4h', '5h']
+    straight_flush3 = ['2h', '3h',
+                       '4h', '5h', '6h']
 
     tests = [pair1, pair2, pair3, pair4, two_pairs1, two_pairs2, three_of_a_kind1, three_of_a_kind2, four_of_a_kind1,
              four_of_a_kind2, straight1, straight2, straight3, flush1, straight_flush1, straight_flush2, straight_flush3]
