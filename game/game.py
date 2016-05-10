@@ -1,6 +1,7 @@
 import collections
 import itertools
 import random
+import csv
 
 import sys
 import os
@@ -14,51 +15,82 @@ from deuces import Card
 from deuces import Evaluator
 
 
-class Game:
-    # players is a list of players
+#### USER-DEFINED VARIABLES ####
+N_PLAYERS = 3 # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
+              # respective strategies
 
-    def __init__(self, players, small_blind=0, big_blind=0, buy_in=100, raise_amounts=1, starting_card_count=2, community_card_count=5):
+# Game Variables:
+BUY_IN = 100
+RAISE_AMT = 5
+
+
+class Game:
+
+    def __init__(self, small_blind=0, big_blind=0, raise_amounts=1, starting_card_count=2, community_card_count=5):
 
         # Constructor parameters
-        self.players = players
+        self.players = OrderedDict()
         self.small_blind = small_blind
         self.big_blind = big_blind
-        self.buy_in = buy_in
         self.raise_amounts = raise_amounts
         self.starting_card_count = starting_card_count
         self.community_card_count = community_card_count
-
-        self.player_count = len(players)
+        self.player_count = 0
 
         # Initialize deck
         self.deck = Deck()
-        self.call = 0   # call this to remain in the game
-        self.dealer = 0          # position of dealer chip
+        self.call = 0       # call this to remain in the game
+        self.dealer = 0     # position of dealer chip
         self.pot = 0
 
         self.blind_count = (small_blind > 0) + (big_blind > 0)
 
-        # player states
-        self.player_states = OrderedDict()
+        # Create table containing preflop odds (to be consulted by strategies)
+        self.preflop_odds_table = self.create_preflop_odds_table()
 
-    
-    def initializePlayersStates(self):
 
-        for player in self.players:
-            player.setHoleCards(self.deck.getPreFlop(
+    def add_player(self, player):
+        """
+            This function adds a players to the game
+        """
+        self.players[self.player_count] = player   
+        self.players[self.player_count].id = self.player_count  # This gives the players a fixed numerical index (an 'I.D')
+
+        self.player_count += 1                     # TODO: NEED TO MAKE INDEXING DYNAMIC: the way it is, if a player is in the small
+                                                   # blind position or in the big blind position, it will ways stay there for every 
+                                                   # round.
+
+    def initializePlayerCards(self):
+        """
+            This function initializes player's hole cards
+        """
+        for i in range(self.player_count):
+            self.players[i].setHoleCards(self.deck.getPreFlop(
                 number_of_cards=self.starting_card_count))
+        return self.players
 
-            # [current funds, bet amount, action, score]
-            self.player_states[player] = [self.buy_in, 0, None, 0]
 
-        return self.player_states
+    def create_preflop_odds_table(self):
+        """
+            This function creates a python dictionary structure containing the probability that each possible preflop 
+            hand will end-up being the best hand. This was done by using a table with precalculated odds (for speed)
+            Reference: http://www.natesholdem.com/pre-flop-odds.php
+            Note: 's' in the hand names means 'suited' and 'o' means 'off suit' 
+        """
+        preflop_odds = {}
+        with open('./data/preflop_odds.txt', 'rb') as csv_file:
+            reader = csv.reader(csv_file, delimiter='\t')
+            for row in reader:
+                preflop_odds[row[0]] = [row[1:]]
 
+        return preflop_odds
     
+
     def setBlinds(self):
 
         if self.small_blind > 0:
 
-            state = self.player_states[self.players[self.dealer + 1]]
+            state = self.players[self.dealer + 1].states
             state[0] -= self.small_blind
             state[1] += self.small_blind
             state[2] = None
@@ -68,8 +100,8 @@ class Game:
 
         if self.big_blind > 0:
 
-            state = self.player_states[self.players[
-                (self.dealer + 2) % self.player_count]]
+            state = self.players[
+                (self.dealer + 2) % self.player_count].states
             state[0] -= self.big_blind
             state[1] += self.big_blind
             state[2] = None
@@ -84,95 +116,97 @@ class Game:
        
         i = self.blind_count + 1
         curr_player_index = (self.dealer + i) % self.player_count
-        curr_state = self.player_states[self.players[curr_player_index]]
+        # curr_state = self.players[curr_player_index].states  # Replaced this local variable by its real address, so it gets 
+                                                               # updated in the player class
 
         # players bet until everyone either calls or folds
-        while not (curr_state[2] == 'C' and curr_state[1] == self.call):
-            if curr_state[2] != 'F':
+        while not (self.players[curr_player_index].states[2] == 'C' and self.players[curr_player_index].states[1] == self.call):
+            if self.players[curr_player_index].states[2] != 'F':
                 action = self.players[curr_player_index].getAction(
                     player=self.players[curr_player_index],
-                    env_state=self.player_states,
+                    game=self,
                     call=self.call,
-                    raise_amt=5)
+                    raise_amt=RAISE_AMT)
 
                 # here we could also potentially set the bet amount to 0
                 if action == 'F':
-                    curr_state[2] = 'F'
+                    self.players[curr_player_index].states[2] = 'F'
 
                 if action == 'C':
-                    diff = self.call - curr_state[1]
+                    diff = self.call - self.players[curr_player_index].states[1]
 
                     # your current funds must be at least the amount you bet
-                    assert(curr_state[0] >= diff)
+                    assert(self.players[curr_player_index].states[0] >= diff)
 
-                    curr_state[0] -= diff
-                    curr_state[1] += diff
+                    self.players[curr_player_index].states[0] -= diff
+                    self.players[curr_player_index].states[1] += diff
                     self.pot += diff
-                    curr_state[2] = 'C'
+                    self.players[curr_player_index].states[2] = 'C'
 
                 # need to decide raising conventions
                 if action == 'R':
                     raise_amt = 5
 
                     # in real poker you can raise even if you haven't called (i.e. calling and raising above the call in one move)
-                    diff = (self.call - curr_state[1]) + raise_amt
-                    assert(curr_state[0] >= diff) # TODO: this returns an error sometimes, need to fix
+                    diff = (self.call - self.players[curr_player_index].states[1]) + raise_amt
+                    assert(self.players[curr_player_index].states[0] >= diff) # TODO: this returns an error sometimes, need to fix
 
-                    curr_state[0] -= diff
-                    curr_state[1] += diff
+                    self.players[curr_player_index].states[0] -= diff
+                    self.players[curr_player_index].states[1] += diff
                     self.pot += diff
 
                     self.call += raise_amt
-                    curr_state[2] = 'R'
+                    self.players[curr_player_index].states[2] = 'R'
 
             # move to next player (array viewed as circular table)
             i += 1
             curr_player_index = (self.dealer + i) % self.player_count
-            curr_state = self.player_states[self.players[curr_player_index]]
+            curr_state = self.players[curr_player_index]
 
     
     def getCurrentPlayers(self):
 
         self.ingame_players = []
-        for player in self.player_states:
 
-            if self.player_states[player][2] != 'F':
-                self.ingame_players.append(player)
+        for i in range(self.player_count):
+            if self.players[i].states[2] != 'F':
+                self.ingame_players.append(self.players[i].id)   # Keeps their ID stored to make it easier to identify them 
+                                                                 # in the updatePlayerEarnings function
 
         return self.ingame_players
 
-    
+
     def updatePlayerEarnings(self):
         # Winner 
         # we might want to update the current funds in here as well 
         # currently we're updating the score and the earnings (seems like they're both recording the same thing)
         # if len(self.ingame_players) == 1:
-        #     self.player_states[self.ingame_players[0]][3] = self.pot
+        #     self.player_list[self.ingame_players[0]][3] = self.pot
         #     self.ingame_players[0].earnings += self.pot
 
         winnings = (1.0 * self.pot) / len(self.ingame_players)
         # update current funds, score, and earnings (we might want to delete one of those two) of the winners
         # also reset bet and last action
-        for player in self.ingame_players:
-            self.player_states[player][0] += winnings
-            self.player_states[player][3] += winnings
-            player.earnings += winnings
+        for player_id in self.ingame_players:
+            self.players[player_id].states[0] += winnings
+            self.players[player_id].states[3] += winnings
+            self.players[player_id].earnings += winnings
 
-            self.player_states[player][1] = 0
-            self.player_states[player][2] = None
+            self.players[player_id].states[1] = 0
+            self.players[player_id].states[2] = None
 
 
         # Update the losers' states
-        for player in self.player_states:
-            if player not in self.ingame_players:
+        for player_id in range(self.player_count):
+            if player_id not in self.ingame_players:
 
-                loss = self.player_states[player][1]
+                loss = self.players[player_id].states[1]
 
-                self.player_states[player][3] -= loss
-                player.earnings -= loss
+                self.players[player_id].states[3] -= loss
+                self.players[player_id].earnings -= loss
 
-                self.player_states[player][1] = 0
-                self.player_states[player][2] = None
+                self.players[player_id].states[1] = 0
+                self.players[player_id].states[2] = None
 
     
     # We might want to make this a field of the Game objet instead of setting it for every player, but it prbly doesn't matter
@@ -180,19 +214,14 @@ class Game:
 
         community_cards = self.deck.getFlop(number_of_cards=5)
 
-        for player in self.ingame_players:
-            player.setCommunityCards(community_cards)
+        for player_id in self.ingame_players:
+            self.players[player_id].setCommunityCards(community_cards)
 
 
     # for debugging
     def printPlayerStates(self):
-        
-        i = 1
-        for p in self.player_states:
-            print str(i) + " :" + str(self.player_states[p])
-            i += 1
-
-        print
+        for i in range(self.player_count):
+            print self.players[i].states
 
     def playGame(self):
 
@@ -224,29 +253,36 @@ class Game:
 
     def testPlayGame(self):
 
-        self.initializePlayersStates()
+        self.initializePlayerCards()
         print "Initial states :"
+        print "[current funds, bet amount, action, score]"
         self.printPlayerStates()
+        print ''
         
         self.setBlinds()
         print "After blinds :"
+        print "[current funds, bet amount, action, score]"        
         self.printPlayerStates()
+        print ''
 
         self.placeBets()
         print "After betting round :"
+        print "[current funds, bet amount, action, score]"
         self.printPlayerStates()
+        print ''
 
         self.getCurrentPlayers()
         print "Players in after betting :"
         print self.ingame_players
+        print ''
 
         # Move onto post flop round
         if len(self.ingame_players) > 1:
             hand_scores = []
-            self.showCommunityCards()
+            self.showCommunityCards()       
             
-            for player in self.ingame_players:
-                hand_scores.append(player.getHandScore())
+            for player_id in self.ingame_players:
+                hand_scores.append(self.players[player_id].getHandScore())
 
             best_score = min(hand_scores)
             winners = []
@@ -258,61 +294,54 @@ class Game:
 
             print "Winners :"
             print self.ingame_players
+            print ''
 
         # End game
         self.updatePlayerEarnings()
 
         print "After updating earnings :"
+        print "[current funds, bet amount, action, score]"        
         self.printPlayerStates()
+        print ''
 
 
-def main():
+def main(): 
 
-    P1 = Player(Strategy.randomStrategy)
-    P2 = Player(Strategy.randomStrategy)
-    P3 = Player(Strategy.randomStrategy)
-    P4 = Player(Strategy.randomStrategy)
-    P5 = Player(Strategy.randomStrategy)
+    P0 = Player(Strategy.TemperamentalProbabilisticStrategy, BUY_IN, N_PLAYERS)
+    P1 = Player(Strategy.RationalProbabilisticStrategy, BUY_IN, N_PLAYERS)
+    P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
 
-    game = Game([P1, P2, P3, P4, P5], small_blind=5, big_blind=10,
-                buy_in=50, raise_amounts=2, starting_card_count=2)
-    game.initializePlayersStates()
-    game.setBlinds()
+    game = Game(small_blind=5, big_blind=10, 
+        raise_amounts=2, starting_card_count=2)
 
-    game.placeBets()
-    game.getCurrentPlayers()
-
-    try:
-
-        call_count = 0
-        for i, key in enumerate(game.player_states):
-            assert game.players[i] is key
-            call_count += game.player_states[key][2] == 'C'
-
-        assert call_count == len(game.ingame_players)
-
-    except AssertionError as e:
-        raise
-    else:
-        print "All tests passed!"
-
-    game = Game([P1, P2, P3, P4, P5], small_blind=5, big_blind=10,
-                buy_in=50, raise_amounts=2, starting_card_count=2)
+    game.add_player(P0)
+    game.add_player(P1)
+    game.add_player(P2)
 
     game.testPlayGame()
 
+  #  game.initializePlayerCards()
+  #  game.setBlinds()
+  #  game.placeBets()
+  #  game.getCurrentPlayers()
+  #  game.updatePlayerEarnings()
 
+  #  try:
 
+   #     call_count = 0
+   #     for i, key in enumerate(game.player_list):
+   #         assert game.players[i] is key
+   #         call_count += game.player_list[key][2] == 'C'
+
+   #     assert call_count == len(game.ingame_players)
+
+   # except AssertionError as e:
+   #     raise
+   # else:
+   #     print "All tests passed!"
 
 if __name__ == '__main__':
     main()
-
-
-
-
-
-
-
 
 
 
