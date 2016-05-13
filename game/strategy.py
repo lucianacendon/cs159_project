@@ -10,8 +10,6 @@ class Strategy:
         """
             This strategy takes random decisions not taking into account its preflop hand
         """
-
-        decision = random.uniform(0, 3)
         cur_funds = player.states[0]
         cur_bet = player.states[1]
         diff = call - cur_bet
@@ -23,11 +21,7 @@ class Strategy:
                 return 'C'
 
             else:
-                if decision < 1.5: 
-                    return 'C'
-
-                else: 
-                    return 'R'
+                return random.choice(['C', 'R'])
 
         # can't call
         if diff > cur_funds:
@@ -35,21 +29,10 @@ class Strategy:
 
         # can't raise
         if raise_bet > cur_funds:
-            if decision < 1.5: 
-                return 'F'
-
-            else: 
-                return 'C'
+            return random.choice(['F', 'C'])
 
         # can do anything
-        if decision < 1:
-            return 'F'
-
-        elif decision < 2:
-            return 'C'
-
-        elif decision < 3:
-            return 'R'
+        return random.choice(['F', 'C', 'R'])
             
 
     @staticmethod
@@ -62,9 +45,6 @@ class Strategy:
         diff = call - cur_bet
         raise_bet = diff + raise_amt
 
-        # Can't Call
-        if diff > cur_funds:
-            return 'F'
 
         # Can't Raise
         if raise_bet > cur_funds:

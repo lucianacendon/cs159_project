@@ -6,7 +6,10 @@ import csv
 import sys
 import os
 
+from player import Agent
+
 from collections import OrderedDict
+from collections import deque
 from deck import Deck
 from player import Player
 from strategy import Strategy
@@ -59,11 +62,15 @@ class Game:
         self.player_count += 1                     # TODO: NEED TO MAKE INDEXING DYNAMIC: the way it is, if a player is in the small
                                                    # blind position or in the big blind position, it will ways stay there for every 
                                                    # round.
+        
 
     def initializePlayerCards(self):
         """
-            This function initializes player's hole cards
+            This function initializes player's hole cards (and the most recent actions set)
         """
+        # most recent actions of all players before the current player
+        self.last_player_actions = deque((self.player_count - 1) * [0], maxlen=(self.player_count - 1))
+
         for i in range(self.player_count):
             self.players[i].setHoleCards(self.deck.getPreFlop(
                 number_of_cards=self.starting_card_count))
@@ -98,6 +105,8 @@ class Game:
             self.pot += self.small_blind
             self.call = self.small_blind
 
+            self.last_player_actions.append('S')
+
         if self.big_blind > 0:
 
             state = self.players[
@@ -109,59 +118,78 @@ class Game:
             self.pot += self.big_blind
             self.call = self.big_blind
 
+            self.last_player_actions.append('B')
+
         return self.pot, self.call
 
     
     def placeBets(self):
        
         i = self.blind_count + 1
-        curr_player_index = (self.dealer + i) % self.player_count
-        # curr_state = self.players[curr_player_index].states  # Replaced this local variable by its real address, so it gets 
-                                                               # updated in the player class
+        cur_player_index = (self.dealer + i) % self.player_count
+        cur_player = self.players[cur_player_index]
+        cur_state = self.players[cur_player_index].states                                                            
 
         # players bet until everyone either calls or folds
-        while not (self.players[curr_player_index].states[2] == 'C' and self.players[curr_player_index].states[1] == self.call):
-            if self.players[curr_player_index].states[2] != 'F':
-                action = self.players[curr_player_index].getAction(
-                    player=self.players[curr_player_index],
-                    game=self,
-                    call=self.call,
-                    raise_amt=RAISE_AMT)
+        while not (cur_state[2] == 'C' and cur_state[1] == self.call):
+            if cur_state[2] != 'F':
+
+                if isinstance(cur_player, Agent):
+                    action = cur_player.getAction(
+                        game=self,
+                        call=self.call,
+                        raise_amt=RAISE_AMT)                
+
+                else:
+                    action = self.players[cur_player_index].getAction(
+                        player=self.players[cur_player_index],
+                        game=self,
+                        call=self.call,
+                        raise_amt=RAISE_AMT)
 
                 # here we could also potentially set the bet amount to 0
                 if action == 'F':
-                    self.players[curr_player_index].states[2] = 'F'
+                    cur_state[2] = 'F'
+                    self.last_player_actions.append('F')
 
                 if action == 'C':
-                    diff = self.call - self.players[curr_player_index].states[1]
+                    diff = self.call - cur_state[1]
 
                     # your current funds must be at least the amount you bet
-                    assert(self.players[curr_player_index].states[0] >= diff)
+                    assert(cur_state[0] >= diff)
 
-                    self.players[curr_player_index].states[0] -= diff
-                    self.players[curr_player_index].states[1] += diff
+                    cur_state[0] -= diff
+                    cur_state[1] += diff
                     self.pot += diff
-                    self.players[curr_player_index].states[2] = 'C'
+                    cur_state[2] = 'C'
+                    self.last_player_actions.append('C')
 
                 # need to decide raising conventions
                 if action == 'R':
                     raise_amt = 5
 
                     # in real poker you can raise even if you haven't called (i.e. calling and raising above the call in one move)
-                    diff = (self.call - self.players[curr_player_index].states[1]) + raise_amt
-                    assert(self.players[curr_player_index].states[0] >= diff) # TODO: this returns an error sometimes, need to fix
+                    diff = (self.call - cur_state[1]) + raise_amt
+                    assert(cur_state[0] >= diff) # TODO: this returns an error sometimes, need to fix
 
-                    self.players[curr_player_index].states[0] -= diff
-                    self.players[curr_player_index].states[1] += diff
+                    cur_state[0] -= diff
+                    cur_state[1] += diff
                     self.pot += diff
 
                     self.call += raise_amt
-                    self.players[curr_player_index].states[2] = 'R'
+                    cur_state[2] = 'R'
+                    self.last_player_actions.append('R')
+
+            # update recent actions to indicate player is out of game 'O' (he has folded in a previous round)
+            else:
+                self.last_player_actions.append('O')
+
 
             # move to next player (array viewed as circular table)
             i += 1
-            curr_player_index = (self.dealer + i) % self.player_count
-            curr_state = self.players[curr_player_index]
+            cur_player_index = (self.dealer + i) % self.player_count
+            cur_player = self.players[cur_player_index]
+            cur_state = self.players[cur_player_index].states
 
     
     def getCurrentPlayers(self):
@@ -185,11 +213,10 @@ class Game:
         #     self.ingame_players[0].earnings += self.pot
 
         winnings = (1.0 * self.pot) / len(self.ingame_players)
-        # update current funds, score, and earnings (we might want to delete one of those two) of the winners
+        # update current funds and earnings of the winners
         # also reset bet and last action
         for player_id in self.ingame_players:
             self.players[player_id].states[0] += winnings
-            self.players[player_id].states[3] += winnings
             self.players[player_id].earnings += winnings
 
             self.players[player_id].states[1] = 0
@@ -202,7 +229,6 @@ class Game:
 
                 loss = self.players[player_id].states[1]
 
-                self.players[player_id].states[3] -= loss
                 self.players[player_id].earnings -= loss
 
                 self.players[player_id].states[1] = 0
@@ -255,19 +281,19 @@ class Game:
 
         self.initializePlayerCards()
         print "Initial states :"
-        print "[current funds, bet amount, action, score]"
+        print "[current funds, bet amount, action]"
         self.printPlayerStates()
         print ''
         
         self.setBlinds()
         print "After blinds :"
-        print "[current funds, bet amount, action, score]"        
+        print "[current funds, bet amount, action]"        
         self.printPlayerStates()
         print ''
 
         self.placeBets()
         print "After betting round :"
-        print "[current funds, bet amount, action, score]"
+        print "[current funds, bet amount, action]"
         self.printPlayerStates()
         print ''
 
@@ -300,7 +326,7 @@ class Game:
         self.updatePlayerEarnings()
 
         print "After updating earnings :"
-        print "[current funds, bet amount, action, score]"        
+        print "[current funds, bet amount, action]"        
         self.printPlayerStates()
         print ''
 
@@ -310,6 +336,8 @@ def main():
     P0 = Player(Strategy.TemperamentalProbabilisticStrategy, BUY_IN, N_PLAYERS)
     P1 = Player(Strategy.RationalProbabilisticStrategy, BUY_IN, N_PLAYERS)
     P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
+
+    # A = agent()
 
     game = Game(small_blind=5, big_blind=10, 
         raise_amounts=2, starting_card_count=2)
