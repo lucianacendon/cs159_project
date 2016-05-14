@@ -23,8 +23,8 @@ N_PLAYERS = 3 # TODO: incorporate this into the game when initializing the playe
               # respective strategies
 
 # Game Variables:
-BUY_IN = 100
-RAISE_AMT = 5
+BUY_IN = 10
+RAISE_AMT = 1
 
 
 class Game:
@@ -166,17 +166,14 @@ class Game:
 
                 # need to decide raising conventions
                 if action == 'R':
-                    raise_amt = 5
-
                     # in real poker you can raise even if you haven't called (i.e. calling and raising above the call in one move)
-                    diff = (self.call - cur_state[1]) + raise_amt
-                    assert(cur_state[0] >= diff) # TODO: this returns an error sometimes, need to fix
+                    diff = (self.call - cur_state[1]) + RAISE_AMT
 
                     cur_state[0] -= diff
                     cur_state[1] += diff
                     self.pot += diff
 
-                    self.call += raise_amt
+                    self.call += RAISE_AMT
                     cur_state[2] = 'R'
                     self.last_player_actions.append('R')
 
@@ -207,7 +204,6 @@ class Game:
     def updatePlayerEarnings(self):
         # Winner 
         # we might want to update the current funds in here as well 
-        # currently we're updating the score and the earnings (seems like they're both recording the same thing)
         # if len(self.ingame_players) == 1:
         #     self.player_list[self.ingame_players[0]][3] = self.pot
         #     self.ingame_players[0].earnings += self.pot
@@ -216,23 +212,13 @@ class Game:
         # update current funds and earnings of the winners
         # also reset bet and last action
         for player_id in self.ingame_players:
-            self.players[player_id].states[0] += winnings
-            self.players[player_id].earnings += winnings
-
-            self.players[player_id].states[1] = 0
-            self.players[player_id].states[2] = None
-
+            self.players[player_id].winUpdate(winnings)
 
         # Update the losers' states
         for player_id in range(self.player_count):
             if player_id not in self.ingame_players:
+                self.players[player_id].loseUpdate()
 
-                loss = self.players[player_id].states[1]
-
-                self.players[player_id].earnings -= loss
-
-                self.players[player_id].states[1] = 0
-                self.players[player_id].states[2] = None
 
     
     # We might want to make this a field of the Game objet instead of setting it for every player, but it prbly doesn't matter
@@ -333,20 +319,32 @@ class Game:
 
 def main(): 
 
-    P0 = Player(Strategy.TemperamentalProbabilisticStrategy, BUY_IN, N_PLAYERS)
-    P1 = Player(Strategy.RationalProbabilisticStrategy, BUY_IN, N_PLAYERS)
-    P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
+    # P0 = Player(Strategy.TemperamentalProbabilisticStrategy, BUY_IN, N_PLAYERS)
+    # P1 = Player(Strategy.RationalProbabilisticStrategy, BUY_IN, N_PLAYERS)
+    # P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
 
-    # A = agent()
+    n_players = 2
+    P = Player(Strategy.randomStrategy, BUY_IN, 2)
+    A = Agent(BUY_IN, 2)
 
-    game = Game(small_blind=5, big_blind=10, 
-        raise_amounts=2, starting_card_count=2)
 
-    game.add_player(P0)
-    game.add_player(P1)
-    game.add_player(P2)
+    # game = Game(small_blind=5, big_blind=10, 
+    #     raise_amounts=2, starting_card_count=2)
 
-    game.testPlayGame()
+    game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
+
+    # game.add_player(P0)
+    # game.add_player(P1)
+    # game.add_player(P2)
+
+    game.add_player(P)
+    game.add_player(A)    
+
+    for i in xrange(100):
+        game.testPlayGame()
+
+    print P.earnings
+    print A.earnings
 
   #  game.initializePlayerCards()
   #  game.setBlinds()

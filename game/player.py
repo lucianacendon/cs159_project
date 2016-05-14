@@ -45,6 +45,24 @@ class Player():
 
         return evaluator.evaluate(board, hand)
 
+    # update states upon winning a round
+    def winUpdate(self, winnings):
+        self.states[0] += winnings
+        self.earnings += winnings
+
+        self.states[1] = 0
+        self.states[2] = None
+
+    # update states upon losing a round
+    def loseUpdate(self):
+        loss = self.states[1]
+
+        self.earnings -= loss
+
+        self.states[1] = 0
+        self.states[2] = None  
+
+
     # return tag summarizing two card hand as a string 
     def getHandTag(self):
         card1Num, card1Suit = self.hole_cards[0][0], self.hole_cards[0][1]
@@ -53,10 +71,9 @@ class Player():
         if card1Num == card2Num:
             return card1Num + card2Num
 
+        card1Val = cardRank[card1Num]
+        card2Val = cardRank[card2Num]
         if card1Suit == card2Suit:
-            card1Val = cardRank[card1Num]
-            card2Val = cardRank[card2Num]
-
             if card1Val > card2Val:
                 return card1Num + card2Num + 's'
 
@@ -68,7 +85,7 @@ class Player():
                 return card1Num + card2Num + 'o'
 
             else:
-                return card2Num + card1Num + 'o'            
+                return card2Num + card1Num + 'o'          
 
 
     def get_preflop_odds(self,preflop_odds_table,hole_cards):
@@ -105,19 +122,6 @@ class Player():
 
         return odds
 
-        
-    # these will be done in the simulator
-    # def receive_flop(self):
-    #     flop_cards = self.deck.get_flop()
-    #     for i in range(len(flop_cards)):
-    #         self.cards.append(self.deck.get_flop()[i])
-
-    # def receive_turn(self):
-    #     self.cards.append(self.deck.get_flop()[0])
-
-    # def receive_river(self):
-    #     self.cards.append(self.deck.get_river()[0])
-
     def getAction(self, game, call, raise_amt):
         pass
 
@@ -133,8 +137,8 @@ class Agent(Player):
         self.id = ID
         
         self.Q = {}
-        self.last_state = None
-        self.last_action = None
+        self.prev_state = None
+        self.prev_action = None
         self.iterations_trained = 0
         self.e = .01 # value for e-greedy
         self.alpha = .1 # learning rate (will decrease with time)
@@ -143,6 +147,7 @@ class Agent(Player):
     def updateAlpha(self):
         n = self.iterations_trained / 1000
         self.alpha *= (.99 ** n)
+
 
     # Load Q function from file. Also loads the #iterations and updates the alpha
     def loadQ(self, fName):
@@ -167,46 +172,83 @@ class Agent(Player):
             action_set = ['F', 'C']
 
         # can do anything
+        else:
             action_set = ['F', 'C', 'R']        
 
         hand_tag = self.getHandTag()
-        prev_actions = tuple(game.last_player_actions)
+        other_player_actions = tuple(game.last_player_actions)
         # pot = game.pot
-        cur_state = (hand_tag, prev_actions) 
+        cur_state = (hand_tag, other_player_actions)
 
         r = random.uniform(0, 1)
 
         if cur_state in self.Q:
-            # get action with max value
+            # get action with max value        
             action_values = self.Q[cur_state]
-            action = max(action_values.iteritems(), key=operator.itemgetter(1))[0]
+            sorted_actions = sorted(action_values.items(), key=operator.itemgetter(1), reverse=True) # actions ordered by value
+            for a in sorted_actions:
+                # a : (action, value)
+                if a[0] in action_set: 
+                    action = a[0]
 
             # value of Q(state, action)
-            cur_value = self.Q[cards][prev_actions][action]
-            
+            cur_value = self.Q[cur_state][action]
+
             # e-greedy exploration
             if r < self.e:
                 action = random.choice(['F', 'C', 'R'])
 
         else:
             self.Q[cur_state] = {'F' : 0, 'C' : 0, 'R' : 0}
-            action = random.choice(['F', 'C', 'R'])
+            action = random.choice(action_set)
 
             cur_value = 0
 
-        # learning update (cur_value is max value at current state)
-        self.Q[self.last_state][self.last_action] += self.alpha * (cur_value - self.Q[self.last_state][self.last_action])
+
+
+        if self.prev_state:
+            # learning update (cur_value is max value at current state)
+            self.Q[self.prev_state][self.prev_action] += self.alpha * (cur_value - self.Q[self.prev_state][self.prev_action])
+
+        self.prev_state = cur_state
+        self.prev_action = action
+        self.iterations_trained += 1
+        # update alpha occasionally
+        if self.iterations_trained % 100 == 1:
+            self.alpha *= .99
 
         return action
 
 
-    # get reward for current round, update agent fields
-    def endRound(self, game, reward):
-        Q_prev_state = self.Q[self.last_state[0]][self.last_state[1]]
-        Q_prev_state[self.last_action] += self.learningRate() * (reward - Q_prev_state[self.last_action])
+        # update states upon winning a round
+        def winUpdate(self, winnings):
+            self.states[0] += winnings
+            self.earnings += winnings
+
+            self.states[1] = 0
+            self.states[2] = None
+
+            self.QReward(winnings)
 
 
-    # def lear
+        # update states upon losing a round
+        def loseUpdate(self):
+            loss = self.states[1]
+
+            self.earnings -= loss
+
+            self.states[1] = 0
+            self.states[2] = None
+
+            self.QReward(loss)
+
+
+        # update Q funciton using reward gained or lost
+        def QReward(reward):
+            self.Q[self.prev_state][self.prev_action] += self.alpha * (reward - self.Q[self.prev_state][self.prev_action])
+
+            self.prev_state = None
+            self.prev_action = None            
 
 
 
@@ -218,7 +260,17 @@ class Agent(Player):
 
 
 
+# these will be done in the simulator
+# def receive_flop(self):
+#     flop_cards = self.deck.get_flop()
+#     for i in range(len(flop_cards)):
+#         self.cards.append(self.deck.get_flop()[i])
 
+# def receive_turn(self):
+#     self.cards.append(self.deck.get_flop()[0])
+
+# def receive_river(self):
+#     self.cards.append(self.deck.get_river()[0])
 
 
 
