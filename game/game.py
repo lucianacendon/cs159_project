@@ -131,7 +131,7 @@ class Game:
         cur_state = self.players[cur_player_index].states                                                            
 
         # players bet until everyone either calls or folds
-        while not (cur_state[2] == 'C' and cur_state[1] == self.call):
+        while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')):
             if cur_state[2] != 'F':
 
                 if isinstance(cur_player, Agent):
