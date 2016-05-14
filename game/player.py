@@ -163,17 +163,26 @@ class Agent(Player):
         diff = call - cur_bet
         raise_bet = diff + raise_amt
 
-        # can't call
+        # can't call ### TODO: update q states here before returning
         if diff > cur_funds:
             return 'F'
 
         # can't raise
         if raise_bet > cur_funds:
-            action_set = ['F', 'C']
+            # you can call automatically 
+            if diff == 0:
+                return 'C'
+            
+            else:
+                action_set = ['F', 'C']
 
         # can do anything
         else:
-            action_set = ['F', 'C', 'R']        
+            if diff == 0:
+                action_set = ['C', 'R']
+            
+            else: 
+                action_set = ['F', 'C', 'R']        
 
         hand_tag = self.getHandTag()
         other_player_actions = tuple(game.last_player_actions)
@@ -196,7 +205,7 @@ class Agent(Player):
 
             # e-greedy exploration
             if r < self.e:
-                action = random.choice(['F', 'C', 'R'])
+                action = random.choice(action_set)
 
         else:
             self.Q[cur_state] = {'F' : 0, 'C' : 0, 'R' : 0}
