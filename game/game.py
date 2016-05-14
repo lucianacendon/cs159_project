@@ -39,12 +39,15 @@ class Game:
         self.starting_card_count = starting_card_count
         self.community_card_count = community_card_count
         self.player_count = 0
+        self.players_in_game = 0
 
         # Initialize deck
         self.deck = Deck()
         self.call = 0       # call this to remain in the game
         self.dealer = 0     # position of dealer chip
         self.pot = 0
+
+
 
         self.blind_count = (small_blind > 0) + (big_blind > 0)
 
@@ -62,6 +65,7 @@ class Game:
         self.player_count += 1                     # TODO: NEED TO MAKE INDEXING DYNAMIC: the way it is, if a player is in the small
                                                    # blind position or in the big blind position, it will ways stay there for every 
                                                    # round.
+        self.players_in_game += 1
         
 
     def initializePlayerCards(self):
@@ -132,6 +136,9 @@ class Game:
 
         # players bet until everyone either calls or folds
         while not (cur_state[2] == 'C' and cur_state[1] == self.call):
+            print cur_state[2], cur_state[1], self.call
+            if self.players_in_game == 1:
+                break
             if cur_state[2] != 'F':
 
                 if isinstance(cur_player, Agent):
@@ -180,6 +187,9 @@ class Game:
             # update recent actions to indicate player is out of game 'O' (he has folded in a previous round)
             else:
                 self.last_player_actions.append('O')
+                self.players_in_game -= 1
+
+
 
 
             # move to next player (array viewed as circular table)
@@ -324,7 +334,7 @@ def main():
     # P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
 
     n_players = 2
-    P = Player(Strategy.randomStrategy, BUY_IN, 2)
+    P = Player(Strategy.aggresiveStrategy, BUY_IN, 2)
     A = Agent(BUY_IN, 2)
 
 
@@ -340,7 +350,8 @@ def main():
     game.add_player(P)
     game.add_player(A)    
 
-    for i in xrange(100):
+    for i in xrange(1000):
+        game.deck = Deck()
         game.testPlayGame()
 
     print P.earnings
