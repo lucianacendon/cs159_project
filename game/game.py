@@ -41,10 +41,13 @@ class Game:
         self.player_count = 0
         self.players_in_game = 0
 
+        # Rotate blinds
+        self.iteration = 0
+        self.dealer = 0   # position of dealer chip
+
         # Initialize deck
         self.deck = Deck()
         self.call = 0       # call this to remain in the game
-        self.dealer = 0     # position of dealer chip
         self.pot = 0
 
 
@@ -62,9 +65,10 @@ class Game:
         self.players[self.player_count] = player   
         self.players[self.player_count].id = self.player_count  # This gives the players a fixed numerical index (an 'I.D')
 
-        self.player_count += 1                     # TODO: NEED TO MAKE INDEXING DYNAMIC: the way it is, if a player is in the small
-                                                   # blind position or in the big blind position, it will ways stay there for every 
-                                                   # round.
+        # Total players
+        self.player_count += 1                                                
+        
+        # Total players that haven't folded
         self.players_in_game += 1
         
 
@@ -98,10 +102,14 @@ class Game:
     
 
     def setBlinds(self):
+        
+        # Rotate dealer
+        self.dealer = self.iteration % self.player_count
+        self.iteration += 1
 
         if self.small_blind > 0:
 
-            state = self.players[self.dealer + 1].states
+            state = self.players[(self.dealer + 1) % self.player_count].states
             state[0] -= self.small_blind
             state[1] += self.small_blind
             state[2] = None
@@ -160,23 +168,27 @@ class Game:
                         call=self.call,
                         raise_amt=RAISE_AMT)
 
-                # here we could also potentially set the bet amount to 0
-                if action == 'F':
-                    cur_state[2] = 'F'
-                    self.last_player_actions.append('F')
-                    self.players_in_game -= 1
+                
 
                 if action == 'C':
                     diff = self.call - cur_state[1]
 
                     # your current funds must be at least the amount you bet
-                    assert(cur_state[0] >= diff)
+                    if cur_state[0] < diff:
+                        # Set action to Fold and pass down to the Fold clause.
+                        action = 'F'
+                    else:
+                        cur_state[0] -= diff
+                        cur_state[1] += diff
+                        self.pot += diff
+                        cur_state[2] = 'C'
+                        self.last_player_actions.append('C')
 
-                    cur_state[0] -= diff
-                    cur_state[1] += diff
-                    self.pot += diff
-                    cur_state[2] = 'C'
-                    self.last_player_actions.append('C')
+                # here we could also potentially set the bet amount to 0
+                if action == 'F':
+                    cur_state[2] = 'F'
+                    self.last_player_actions.append('F')
+                    self.players_in_game -= 1
 
                 # need to decide raising conventions
                 if action == 'R':
@@ -350,7 +362,7 @@ def main():
 
     n_players = 2
     buy_in = 10
-    P = Player(Strategy.aggresiveStrategy, buy_in, n_players)
+    P = Player(Strategy.randomStrategy, buy_in, n_players)
     A = Agent(buy_in, n_players)
 
 
@@ -375,8 +387,8 @@ def main():
         # print "##################"
         # print
 
-        # if (i + 1) % 5 == 0:
-        #     game.resetFunds(buy_in)
+        if (i + 1) % 5 == 0:
+            game.resetFunds(buy_in)
 
     print P.earnings
     print A.earnings

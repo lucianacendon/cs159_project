@@ -4,6 +4,7 @@ The general outline for this project is located [here](https://docs.google.com/d
 
 
 ### TODO:
+- [x] rotate blinds
 - [x] card hand evaluator
-- [] opponent strategy
+- [x] opponent strategy
 - [x] post-flop game - modified player.py and game.py
