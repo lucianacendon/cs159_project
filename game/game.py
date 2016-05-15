@@ -138,7 +138,6 @@ class Game:
 
         while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')):
 
-            print cur_state[2], cur_state[1], self.call
             if self.players_in_game == 1:
                 break
 
