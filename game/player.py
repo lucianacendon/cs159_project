@@ -133,15 +133,15 @@ class Agent(Player):
     def __init__(self, buy_in, n_players, ID=0):
         self.n_opponents = n_players-1
         self.earnings = 0
-        self.states = [buy_in, 0, None, 0]   # [current funds, bet amount, action]
+        self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
         self.id = ID
         
         self.Q = {}
         self.prev_state = None
         self.prev_action = None
         self.iterations_trained = 0
-        self.e = .01 # value for e-greedy
-        self.alpha = .1 # learning rate (will decrease with time)
+        self.e = .1 # value for e-greedy
+        self.alpha = .01 # learning rate (will decrease with time)
 
 
     def updateAlpha(self):
@@ -163,15 +163,17 @@ class Agent(Player):
         diff = call - cur_bet
         raise_bet = diff + raise_amt
 
-        # can't call ### TODO: update q states here before returning
+        action = None
+
+        # can't call 
         if diff > cur_funds:
-            return 'F'
+            action = 'F'
 
         # can't raise
         if raise_bet > cur_funds:
             # you can call automatically 
             if diff == 0:
-                return 'C'
+                action = 'C'
             
             else:
                 action_set = ['F', 'C']
@@ -188,6 +190,8 @@ class Agent(Player):
         other_player_actions = tuple(game.last_player_actions)
         # pot = game.pot
         cur_state = (hand_tag, other_player_actions)
+        # print "cur state"
+        # print cur_state
 
         r = random.uniform(0, 1)
 
@@ -195,29 +199,36 @@ class Agent(Player):
             # get action with max value        
             action_values = self.Q[cur_state]
             sorted_actions = sorted(action_values.items(), key=operator.itemgetter(1), reverse=True) # actions ordered by value
-            for a in sorted_actions:
-                # a : (action, value)
-                if a[0] in action_set: 
-                    action = a[0]
+            
+            # print "sorted actions"
+            # print sorted_actions
+            max_action_value = sorted_actions[0][1]
 
-            # value of Q(state, action)
-            cur_value = self.Q[cur_state][action]
+            # action has not been decided yet
+            if not action: 
+                for a in sorted_actions:
+                    # a : (action, value)
+                    if a[0] in action_set: 
+                        action = a[0]
+                        break
 
-            # e-greedy exploration
-            if r < self.e:
-                action = random.choice(action_set)
+                # e-greedy exploration
+                if r < self.e:
+                    action = random.choice(action_set)
 
         else:
             self.Q[cur_state] = {'F' : 0, 'C' : 0, 'R' : 0}
-            action = random.choice(action_set)
+            
+            if not action:
+                action = random.choice(action_set)
 
-            cur_value = 0
+            max_action_value = 0
 
 
 
         if self.prev_state:
-            # learning update (cur_value is max value at current state)
-            self.Q[self.prev_state][self.prev_action] += self.alpha * (cur_value - self.Q[self.prev_state][self.prev_action])
+            # learning update
+            self.Q[self.prev_state][self.prev_action] += self.alpha * (max_action_value - self.Q[self.prev_state][self.prev_action])
 
         self.prev_state = cur_state
         self.prev_action = action
@@ -229,35 +240,38 @@ class Agent(Player):
         return action
 
 
-        # update states upon winning a round
-        def winUpdate(self, winnings):
-            self.states[0] += winnings
-            self.earnings += winnings
+    # update states upon winning a round
+    def winUpdate(self, winnings):
+        self.states[0] += winnings
+        self.earnings += winnings
 
-            self.states[1] = 0
-            self.states[2] = None
+        self.states[1] = 0
+        self.states[2] = None
 
-            self.QReward(winnings)
-
-
-        # update states upon losing a round
-        def loseUpdate(self):
-            loss = self.states[1]
-
-            self.earnings -= loss
-
-            self.states[1] = 0
-            self.states[2] = None
-
-            self.QReward(loss)
+        self.QReward(winnings)
 
 
-        # update Q funciton using reward gained or lost
-        def QReward(reward):
+    # update states upon losing a round
+    def loseUpdate(self):
+        loss = self.states[1]
+
+        self.earnings -= loss
+
+        self.states[1] = 0
+        self.states[2] = None
+
+        self.QReward(loss)
+
+
+    # update Q funciton using reward gained or lost
+    def QReward(self, reward):
+        if self.prev_state:
             self.Q[self.prev_state][self.prev_action] += self.alpha * (reward - self.Q[self.prev_state][self.prev_action])
 
             self.prev_state = None
-            self.prev_action = None            
+            self.prev_action = None 
+
+        # otherwise opponent folded at start of game (could update opponent modeling here)           
 
 
 
