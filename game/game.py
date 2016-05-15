@@ -23,8 +23,8 @@ N_PLAYERS = 3 # TODO: incorporate this into the game when initializing the playe
               # respective strategies
 
 # Game Variables:
-BUY_IN = 10
-RAISE_AMT = 1
+BUY_IN = 100
+RAISE_AMT = 2
 
 
 class Game:
@@ -128,7 +128,8 @@ class Game:
 
     
     def placeBets(self):
-       
+        # print "*********", self.players_in_game
+
         i = self.blind_count + 1
         cur_player_index = (self.dealer + i) % self.player_count
         cur_player = self.players[cur_player_index]
@@ -138,8 +139,10 @@ class Game:
 
         while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')):
 
-            print cur_state[2], cur_state[1], self.call
+            # print "[current funds, bet amount, action], call amount"
+            # print cur_state, self.call
             if self.players_in_game == 1:
+                # print "hoi"
                 break
 
             if cur_state[2] != 'F':
@@ -161,6 +164,7 @@ class Game:
                 if action == 'F':
                     cur_state[2] = 'F'
                     self.last_player_actions.append('F')
+                    self.players_in_game -= 1
 
                 if action == 'C':
                     diff = self.call - cur_state[1]
@@ -190,7 +194,7 @@ class Game:
             # update recent actions to indicate player is out of game 'O' (he has folded in a previous round)
             else:
                 self.last_player_actions.append('O')
-                self.players_in_game -= 1
+                
 
 
 
@@ -214,12 +218,9 @@ class Game:
         return self.ingame_players
 
 
+    # Here we also reset number of players_in_game
+    # we might want to update the current funds in here as well
     def updatePlayerEarnings(self):
-        # Winner 
-        # we might want to update the current funds in here as well 
-        # if len(self.ingame_players) == 1:
-        #     self.player_list[self.ingame_players[0]][3] = self.pot
-        #     self.ingame_players[0].earnings += self.pot
 
         winnings = (1.0 * self.pot) / len(self.ingame_players)
         # update current funds and earnings of the winners
@@ -231,6 +232,15 @@ class Game:
         for player_id in range(self.player_count):
             if player_id not in self.ingame_players:
                 self.players[player_id].loseUpdate()
+
+        self.players_in_game = self.player_count
+
+    # sets the funds of all the players back to the buy_in (to prevent accumulation)
+    # note earnings is not reset
+    def resetFunds(self, buy_in):
+        for i in self.players:
+            self.players[i].states[0] = buy_in
+
 
 
     
@@ -250,7 +260,7 @@ class Game:
 
     def playGame(self):
 
-        self.initializePlayersStates()        
+        self.initializePlayerCards()
         self.setBlinds()
         self.placeBets()
         self.getCurrentPlayers()
@@ -258,10 +268,10 @@ class Game:
         # Move onto post flop round
         if len(self.ingame_players) > 1:
             hand_scores = []
-            self.showCommunityCards()
+            self.showCommunityCards()       
             
-            for player in self.ingame_players:
-                hand_scores.append(player.getHandScore())
+            for player_id in self.ingame_players:
+                hand_scores.append(self.players[player_id].getHandScore())
 
             best_score = min(hand_scores)
             winners = []
@@ -289,6 +299,8 @@ class Game:
         print "[current funds, bet amount, action]"        
         self.printPlayerStates()
         print ''
+
+        # print "$$$$$$$$$$$$$$$$$$$$$$$$", self.player_count
 
         self.placeBets()
         print "After betting round :"
@@ -337,8 +349,9 @@ def main():
     # P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
 
     n_players = 2
-    P = Player(Strategy.aggresiveStrategy, BUY_IN, 2)
-    A = Agent(BUY_IN, 2)
+    buy_in = 10
+    P = Player(Strategy.aggresiveStrategy, buy_in, n_players)
+    A = Agent(buy_in, n_players)
 
 
     # game = Game(small_blind=5, big_blind=10, 
@@ -355,7 +368,15 @@ def main():
 
     for i in xrange(1000):
         game.deck = Deck()
-        game.testPlayGame()
+        game.playGame()
+        # print
+        # print "##################"
+        # game.testPlayGame()
+        # print "##################"
+        # print
+
+        # if (i + 1) % 5 == 0:
+        #     game.resetFunds(buy_in)
 
     print P.earnings
     print A.earnings
