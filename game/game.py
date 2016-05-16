@@ -1,6 +1,7 @@
 import collections
 import itertools
 import random
+import matplotlib.pyplot as plt
 import csv
 
 import sys
@@ -112,7 +113,7 @@ class Game:
             state = self.players[(self.dealer + 1) % self.player_count].states
             state[0] -= self.small_blind
             state[1] += self.small_blind
-            state[2] = None
+            state[2] = None 
 
             self.pot += self.small_blind
             self.call = self.small_blind
@@ -141,7 +142,7 @@ class Game:
         i = self.blind_count + 1
         cur_player_index = (self.dealer + i) % self.player_count
         cur_player = self.players[cur_player_index]
-        cur_state = self.players[cur_player_index].states                                                            
+        cur_state = self.players[cur_player_index].states                                                           
 
         # players bet until everyone either calls or folds
 
@@ -150,8 +151,8 @@ class Game:
             # print "[current funds, bet amount, action], call amount"
             # print cur_state, self.call
             if self.players_in_game == 1:
-                # print "hoi"
-                break
+                # print "hoi" 
+                break 
 
             if cur_state[2] != 'F':
 
@@ -161,7 +162,7 @@ class Game:
                         call=self.call,
                         raise_amt=RAISE_AMT)                
 
-                else:
+                else:   
                     action = self.players[cur_player_index].getAction(
                         player=self.players[cur_player_index],
                         game=self,
@@ -191,8 +192,7 @@ class Game:
                     self.players_in_game -= 1
 
                 # need to decide raising conventions
-                if action == 'R':
-                    # in real poker you can raise even if you haven't called (i.e. calling and raising above the call in one move)
+                if action == 'R':                    # in real poker you can raise even if you haven't called (i.e. calling and raising above the call in one move)
                     diff = (self.call - cur_state[1]) + RAISE_AMT
 
                     cur_state[0] -= diff
@@ -365,18 +365,21 @@ def main():
     P = Player(Strategy.randomStrategy, buy_in, n_players)
     A = Agent(buy_in, n_players)
 
-
     # game = Game(small_blind=5, big_blind=10, 
     #     raise_amounts=2, starting_card_count=2)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
 
-    # game.add_player(P0)
+
     # game.add_player(P1)
     # game.add_player(P2)
 
     game.add_player(P)
     game.add_player(A)    
+
+    p_earnings = []
+    a_earnings = []
+    it = []
 
     for i in xrange(1000):
         game.deck = Deck()
@@ -386,12 +389,24 @@ def main():
         # game.testPlayGame()
         # print "##################"
         # print
+        p_earnings.append(P.earnings)
+        a_earnings.append(A.earnings)
+        it.append(i)
+
 
         if (i + 1) % 5 == 0:
             game.resetFunds(buy_in)
 
-    print P.earnings
-    print A.earnings
+    plt.plot(it,p_earnings,label='Opponent')
+    plt.plot(it,a_earnings,label='Agent')
+    plt.legend()
+    plt.xlabel('N. iterations')
+    plt.ylabel('Earnings')
+
+    plt.show()
+   
+    print "Final Opponent Earnings:"+str(P.earnings)
+    print "Final Agent Earnings: "+str(A.earnings)
 
   #  game.initializePlayerCards()
   #  game.setBlinds()
