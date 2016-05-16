@@ -36,7 +36,7 @@ class Strategy:
             
 
     @staticmethod
-    def aggresiveStrategy(player, game, call, raise_amt):
+    def aggressiveStrategy(player, game, call, raise_amt):
         """
             This strategy always Raises not taking into account its preflop hand
         """

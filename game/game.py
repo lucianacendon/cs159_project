@@ -361,7 +361,7 @@ def main():
     # P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
 
     n_players = 2
-    buy_in = 10
+    buy_in = 5
     P = Player(Strategy.randomStrategy, buy_in, n_players)
     A = Agent(buy_in, n_players)
 
@@ -382,20 +382,25 @@ def main():
     it = []
 
     for i in xrange(1000):
-        game.deck = Deck()
-        game.playGame()
-        # print
-        # print "##################"
-        # game.testPlayGame()
-        # print "##################"
-        # print
-        p_earnings.append(P.earnings)
-        a_earnings.append(A.earnings)
-        it.append(i)
+
+        if P.earnings <= 0 or A.earnings <= 0:
+            print "One of the 2 players went broke. Game over."
+            break
+        else:        
+            game.deck = Deck()
+            game.playGame()
+            # print
+            # print "##################"
+            # game.testPlayGame()
+            # print "##################"
+            # print
+            p_earnings.append(P.earnings)
+            a_earnings.append(A.earnings)
+            it.append(i)
 
 
-        if (i + 1) % 5 == 0:
-            game.resetFunds(buy_in)
+       # if (i + 1) % 5 == 0:
+       #     game.resetFunds(buy_in)
 
     plt.plot(it,p_earnings,label='Opponent')
     plt.plot(it,a_earnings,label='Agent')
