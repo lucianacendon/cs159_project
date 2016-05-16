@@ -1,5 +1,8 @@
 import collections
 import itertools
+from collections import OrderedDict
+from collections import deque
+
 import random
 import matplotlib.pyplot as plt
 import csv
@@ -7,10 +10,7 @@ import csv
 import sys
 import os
 
-from player import Agent
-
-from collections import OrderedDict
-from collections import deque
+from Agent import Agent
 from deck import Deck
 from player import Player
 from strategy import Strategy
@@ -148,10 +148,7 @@ class Game:
 
         while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')):
 
-            # print "[current funds, bet amount, action], call amount"
-            # print cur_state, self.call
             if self.players_in_game == 1:
-                # print "hoi" 
                 break 
 
             if cur_state[2] != 'F':
@@ -356,23 +353,13 @@ class Game:
 
 def main(): 
 
-    # P0 = Player(Strategy.TemperamentalProbabilisticStrategy, BUY_IN, N_PLAYERS)
-    # P1 = Player(Strategy.RationalProbabilisticStrategy, BUY_IN, N_PLAYERS)
-    # P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
-
     n_players = 2
     buy_in = 10
-    P = Player(Strategy.randomStrategy, buy_in, n_players)
+    P = Player(Strategy.aggresiveStrategy, buy_in, n_players)
+    #P = Player(Strategy.randomStrategy, buy_in, n_players)
     A = Agent(buy_in, n_players)
 
-    # game = Game(small_blind=5, big_blind=10, 
-    #     raise_amounts=2, starting_card_count=2)
-
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
-
-
-    # game.add_player(P1)
-    # game.add_player(P2)
 
     game.add_player(P)
     game.add_player(A)    
@@ -384,49 +371,25 @@ def main():
     for i in xrange(1000):
         game.deck = Deck()
         game.playGame()
-        # print
-        # print "##################"
-        # game.testPlayGame()
-        # print "##################"
-        # print
+
         p_earnings.append(P.earnings)
         a_earnings.append(A.earnings)
         it.append(i)
 
-
         if (i + 1) % 5 == 0:
             game.resetFunds(buy_in)
 
-    plt.plot(it,p_earnings,label='Opponent')
-    plt.plot(it,a_earnings,label='Agent')
-    plt.legend()
-    plt.xlabel('N. iterations')
-    plt.ylabel('Earnings')
+    # plt.plot(it,p_earnings,label='Opponent')
+    # plt.plot(it,a_earnings,label='Agent')
+    # plt.legend()
+    # plt.xlabel('N. iterations')
+    # plt.ylabel('Earnings')
 
-    plt.show()
+    # plt.show()
    
     print "Final Opponent Earnings:"+str(P.earnings)
     print "Final Agent Earnings: "+str(A.earnings)
 
-  #  game.initializePlayerCards()
-  #  game.setBlinds()
-  #  game.placeBets()
-  #  game.getCurrentPlayers()
-  #  game.updatePlayerEarnings()
-
-  #  try:
-
-   #     call_count = 0
-   #     for i, key in enumerate(game.player_list):
-   #         assert game.players[i] is key
-   #         call_count += game.player_list[key][2] == 'C'
-
-   #     assert call_count == len(game.ingame_players)
-
-   # except AssertionError as e:
-   #     raise
-   # else:
-   #     print "All tests passed!"
 
 if __name__ == '__main__':
     main()
