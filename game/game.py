@@ -355,8 +355,8 @@ def main():
 
     n_players = 2
     buy_in = 10
-    P = Player(Strategy.aggresiveStrategy, buy_in, n_players)
-    #P = Player(Strategy.randomStrategy, buy_in, n_players)
+    #P = Player(Strategy.aggresiveStrategy, buy_in, n_players)
+    P = Player(Strategy.randomStrategy, buy_in, n_players)
     A = Agent(buy_in, n_players)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
@@ -368,7 +368,7 @@ def main():
     a_earnings = []
     it = []
 
-    for i in xrange(1000):
+    for i in xrange(10000):
         game.deck = Deck()
         game.playGame()
 

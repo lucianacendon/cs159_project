@@ -56,19 +56,11 @@ class Agent(Player):
         # can't raise
         if raise_bet > cur_funds:
             # you can call automatically 
-            if diff == 0:
-                action = 'C'
-            
-            else:
-                action_set = ['F', 'C']
+            action_set = ['F', 'C']
 
         # can do anything
-        else:
-            if diff == 0:
-                action_set = ['C', 'R']
-            
-            else: 
-                action_set = ['F', 'C', 'R']        
+        else:   
+            action_set = ['F', 'C', 'R']        
 
         hand_tag = self.getHandTag()
         other_player_actions = tuple(game.last_player_actions)
