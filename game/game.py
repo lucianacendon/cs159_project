@@ -19,6 +19,13 @@ from deuces import Card
 from deuces import Evaluator
 
 
+N_PLAYERS = 3   # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
+                # respective strategies
+
+# Game Variables:
+BUY_IN = 100
+RAISE_AMT = 2
+
 class Game:
 
     def __init__(self, small_blind=0, big_blind=0, raise_amounts=1, starting_card_count=2, community_card_count=5):
