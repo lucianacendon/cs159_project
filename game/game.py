@@ -1,5 +1,8 @@
 import collections
 import itertools
+from collections import OrderedDict
+from collections import deque
+
 import random
 import matplotlib.pyplot as plt
 import csv
@@ -7,25 +10,13 @@ import csv
 import sys
 import os
 
-from player import Agent
-
-from collections import OrderedDict
-from collections import deque
+from Agent import Agent
 from deck import Deck
 from player import Player
 from strategy import Strategy
 
 from deuces import Card
 from deuces import Evaluator
-
-
-#### USER-DEFINED VARIABLES ####
-N_PLAYERS = 3 # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
-              # respective strategies
-
-# Game Variables:
-BUY_IN = 100
-RAISE_AMT = 2
 
 
 class Game:
@@ -79,7 +70,7 @@ class Game:
         """
         # most recent actions of all players before the current player
         self.last_player_actions = deque((self.player_count - 1) * [0], maxlen=(self.player_count - 1))
-
+ 
         for i in range(self.player_count):
             self.players[i].setHoleCards(self.deck.getPreFlop(
                 number_of_cards=self.starting_card_count))
@@ -137,7 +128,6 @@ class Game:
 
     
     def placeBets(self):
-        # print "*********", self.players_in_game
 
         i = self.blind_count + 1
         cur_player_index = (self.dealer + i) % self.player_count
@@ -145,13 +135,11 @@ class Game:
         cur_state = self.players[cur_player_index].states                                                           
 
         # players bet until everyone either calls or folds
+        # Maximum amount of bets is 4 per player
+        allowed_rounds = 4 * self.player_count
+        while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')) and allowed_rounds > 0:
 
-        while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')):
-
-            # print "[current funds, bet amount, action], call amount"
-            # print cur_state, self.call
             if self.players_in_game == 1:
-                # print "hoi" 
                 break 
 
             if cur_state[2] != 'F':
@@ -208,14 +196,12 @@ class Game:
                 self.last_player_actions.append('O')
                 
 
-
-
-
             # move to next player (array viewed as circular table)
             i += 1
             cur_player_index = (self.dealer + i) % self.player_count
             cur_player = self.players[cur_player_index]
             cur_state = self.players[cur_player_index].states
+            allowed_rounds -= 1
 
     
     def getCurrentPlayers(self):
@@ -235,6 +221,7 @@ class Game:
     def updatePlayerEarnings(self):
 
         winnings = (1.0 * self.pot) / len(self.ingame_players)
+
         # update current funds and earnings of the winners
         # also reset bet and last action
         for player_id in self.ingame_players:
@@ -253,8 +240,8 @@ class Game:
         for i in self.players:
             self.players[i].states[0] = buy_in
 
-
-
+    def resetPot(self):
+        self.pot = 0
     
     # We might want to make this a field of the Game objet instead of setting it for every player, but it prbly doesn't matter
     def showCommunityCards(self):
@@ -272,6 +259,7 @@ class Game:
 
     def playGame(self):
 
+        self.resetPot()
         self.initializePlayerCards()
         self.setBlinds()
         self.placeBets()
@@ -287,7 +275,7 @@ class Game:
 
             best_score = min(hand_scores)
             winners = []
-            for i in xrange(len(hand_scores)):
+            for i in range(len(hand_scores)):
                 if hand_scores[i] == best_score:
                     winners.append(self.ingame_players[i])
 
@@ -356,82 +344,42 @@ class Game:
 
 def main(): 
 
-    # P0 = Player(Strategy.TemperamentalProbabilisticStrategy, BUY_IN, N_PLAYERS)
-    # P1 = Player(Strategy.RationalProbabilisticStrategy, BUY_IN, N_PLAYERS)
-    # P2 = Player(Strategy.randomStrategy, BUY_IN, N_PLAYERS)
-
+    numGames = 10000
     n_players = 2
-    buy_in = 5
+    buy_in = 20
+
     P = Player(Strategy.randomStrategy, buy_in, n_players)
     A = Agent(buy_in, n_players)
 
-    # game = Game(small_blind=5, big_blind=10, 
-    #     raise_amounts=2, starting_card_count=2)
-
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
-
-
-    # game.add_player(P1)
-    # game.add_player(P2)
-
     game.add_player(P)
     game.add_player(A)    
 
-    p_earnings = []
-    a_earnings = []
-    it = []
+    # p_earnings = []
+    # a_earnings = []
+    # it = []
 
-    for i in xrange(1000):
+    for i in xrange(numGames):
+        game.deck = Deck()
+        game.playGame()
 
-        if P.earnings <= 0 or A.earnings <= 0:
-            print "One of the 2 players went broke. Game over."
-            break
-        else:        
-            game.deck = Deck()
-            game.playGame()
-            # print
-            # print "##################"
-            # game.testPlayGame()
-            # print "##################"
-            # print
-            p_earnings.append(P.earnings)
-            a_earnings.append(A.earnings)
-            it.append(i)
+        # p_earnings.append(P.earnings / (i + 1))
+        # a_earnings.append(A.earnings / (i + 1))
+        # it.append(i)
 
+        if (i + 1) % 5 == 0:
+            game.resetFunds(buy_in)
 
-       # if (i + 1) % 5 == 0:
-       #     game.resetFunds(buy_in)
+    # plt.plot(it,p_earnings,label='Opponent')
+    # plt.plot(it,a_earnings,label='Agent')
+    # plt.legend()
+    # plt.xlabel('N. iterations')
+    # plt.ylabel('Earnings')
 
-    plt.plot(it,p_earnings,label='Opponent')
-    plt.plot(it,a_earnings,label='Agent')
-    plt.legend()
-    plt.xlabel('N. iterations')
-    plt.ylabel('Earnings')
+    # plt.show()
+    print "Final Opponent Earnings:" + str(P.earnings / numGames)
+    print "Final Agent Earnings: " + str(A.earnings / numGames)
 
-    plt.show()
-   
-    print "Final Opponent Earnings:"+str(P.earnings)
-    print "Final Agent Earnings: "+str(A.earnings)
-
-  #  game.initializePlayerCards()
-  #  game.setBlinds()
-  #  game.placeBets()
-  #  game.getCurrentPlayers()
-  #  game.updatePlayerEarnings()
-
-  #  try:
-
-   #     call_count = 0
-   #     for i, key in enumerate(game.player_list):
-   #         assert game.players[i] is key
-   #         call_count += game.player_list[key][2] == 'C'
-
-   #     assert call_count == len(game.ingame_players)
-
-   # except AssertionError as e:
-   #     raise
-   # else:
-   #     print "All tests passed!"
 
 if __name__ == '__main__':
     main()
