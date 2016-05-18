@@ -19,15 +19,6 @@ from deuces import Card
 from deuces import Evaluator
 
 
-#### USER-DEFINED VARIABLES ####
-N_PLAYERS = 3 # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
-              # respective strategies
-
-# Game Variables:
-BUY_IN = 100
-RAISE_AMT = 2
-
-
 class Game:
 
     def __init__(self, small_blind=0, big_blind=0, raise_amounts=1, starting_card_count=2, community_card_count=5):
@@ -79,7 +70,7 @@ class Game:
         """
         # most recent actions of all players before the current player
         self.last_player_actions = deque((self.player_count - 1) * [0], maxlen=(self.player_count - 1))
-
+ 
         for i in range(self.player_count):
             self.players[i].setHoleCards(self.deck.getPreFlop(
                 number_of_cards=self.starting_card_count))
@@ -137,7 +128,6 @@ class Game:
 
     
     def placeBets(self):
-        # print "*********", self.players_in_game
 
         i = self.blind_count + 1
         cur_player_index = (self.dealer + i) % self.player_count
@@ -145,8 +135,9 @@ class Game:
         cur_state = self.players[cur_player_index].states                                                           
 
         # players bet until everyone either calls or folds
-
-        while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')):
+        # Maximum amount of bets is 4 per player
+        allowed_rounds = 4 * self.player_count
+        while not (cur_state[1] == self.call and (cur_state[2] == 'C' or cur_state[2] == 'R')) and allowed_rounds > 0:
 
             if self.players_in_game == 1:
                 break 
@@ -205,14 +196,12 @@ class Game:
                 self.last_player_actions.append('O')
                 
 
-
-
-
             # move to next player (array viewed as circular table)
             i += 1
             cur_player_index = (self.dealer + i) % self.player_count
             cur_player = self.players[cur_player_index]
             cur_state = self.players[cur_player_index].states
+            allowed_rounds -= 1
 
     
     def getCurrentPlayers(self):
@@ -232,6 +221,7 @@ class Game:
     def updatePlayerEarnings(self):
 
         winnings = (1.0 * self.pot) / len(self.ingame_players)
+
         # update current funds and earnings of the winners
         # also reset bet and last action
         for player_id in self.ingame_players:
@@ -250,8 +240,8 @@ class Game:
         for i in self.players:
             self.players[i].states[0] = buy_in
 
-
-
+    def resetPot(self):
+        self.pot = 0
     
     # We might want to make this a field of the Game objet instead of setting it for every player, but it prbly doesn't matter
     def showCommunityCards(self):
@@ -269,6 +259,7 @@ class Game:
 
     def playGame(self):
 
+        self.resetPot()
         self.initializePlayerCards()
         self.setBlinds()
         self.placeBets()
@@ -284,7 +275,7 @@ class Game:
 
             best_score = min(hand_scores)
             winners = []
-            for i in xrange(len(hand_scores)):
+            for i in range(len(hand_scores)):
                 if hand_scores[i] == best_score:
                     winners.append(self.ingame_players[i])
 
@@ -353,28 +344,28 @@ class Game:
 
 def main(): 
 
+    numGames = 10000
     n_players = 2
-    buy_in = 10
-    #P = Player(Strategy.aggresiveStrategy, buy_in, n_players)
+    buy_in = 20
+
     P = Player(Strategy.randomStrategy, buy_in, n_players)
     A = Agent(buy_in, n_players)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
-
     game.add_player(P)
     game.add_player(A)    
 
-    p_earnings = []
-    a_earnings = []
-    it = []
+    # p_earnings = []
+    # a_earnings = []
+    # it = []
 
-    for i in xrange(10000):
+    for i in xrange(numGames):
         game.deck = Deck()
         game.playGame()
 
-        p_earnings.append(P.earnings)
-        a_earnings.append(A.earnings)
-        it.append(i)
+        # p_earnings.append(P.earnings / (i + 1))
+        # a_earnings.append(A.earnings / (i + 1))
+        # it.append(i)
 
         if (i + 1) % 5 == 0:
             game.resetFunds(buy_in)
@@ -386,9 +377,8 @@ def main():
     # plt.ylabel('Earnings')
 
     # plt.show()
-   
-    print "Final Opponent Earnings:"+str(P.earnings)
-    print "Final Agent Earnings: "+str(A.earnings)
+    print "Final Opponent Earnings:" + str(P.earnings / numGames)
+    print "Final Agent Earnings: " + str(A.earnings / numGames)
 
 
 if __name__ == '__main__':
