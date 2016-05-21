@@ -17,18 +17,9 @@ class Agent(Player):
     def __init__(self, buy_in, n_players, ID=0):
         self.n_opponents = n_players-1
         self.earnings = 0
-        self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
         self.id = ID
-        
         self.Q = {}
-        self.prev_state = None
-        self.prev_action = None
-        self.iterations_trained = 0
 
-        self.e = 0.25 # value for e-greedy
-        self.alpha = 0.1 # learning rate (will decrease with time)
-        
-        self.evaluator = Evaluator()
 
     def updateAlpha(self):
         n = self.iterations_trained / 1000
@@ -37,6 +28,43 @@ class Agent(Player):
     # Load Q function from file. Also loads the #iterations and updates the alpha
     def loadQ(self, fName):
         pass
+
+
+    # update states upon winning a round
+    def winUpdate(self, winnings):
+        Player.winUpdate(self, winnings)
+        self.QReward(winnings)
+
+
+    # update states upon losing a round
+    def loseUpdate(self):
+        Player.loseUpdate(self)
+        self.QReward(self.states[1])
+
+
+    # update Q funciton using reward gained or lost
+    def QReward(self, reward):
+        if self.prev_state:
+            self.Q[self.prev_state][self.prev_action] += self.alpha * (reward - self.Q[self.prev_state][self.prev_action])
+
+            self.prev_state = None
+            self.prev_action = None 
+
+        # otherwise opponent folded at start of game (could update opponent modeling here)           
+
+
+class Agent_1(Agent):
+    def __init__(self, buy_in, n_players, ID=0):
+        Agent.__init__(self, buy_in, n_players, ID=0)
+        self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
+
+        self.prev_state = None
+        self.prev_action = None                                 
+        self.iterations_trained = 0
+        self.e = 0.25 # value for e-greedy
+        self.alpha = 0.1 # learning rate (will decrease with time)
+        
+        self.evaluator = Evaluator()
 
     # For now, this is just training the Q-function using e-greedy. Eventually, we should have two functions, one that trains
     # and one that picks the optimal action that we use for testing.
@@ -109,31 +137,6 @@ class Agent(Player):
         self.e *= 0.99
 
         return action
-
-
-    # update states upon winning a round
-    def winUpdate(self, winnings):
-        Player.winUpdate(self, winnings)
-        self.QReward(winnings)
-
-
-    # update states upon losing a round
-    def loseUpdate(self):
-        Player.loseUpdate(self)
-        self.QReward(self.states[1])
-
-
-    # update Q funciton using reward gained or lost
-    def QReward(self, reward):
-        if self.prev_state:
-            self.Q[self.prev_state][self.prev_action] += self.alpha * (reward - self.Q[self.prev_state][self.prev_action])
-
-            self.prev_state = None
-            self.prev_action = None 
-
-        # otherwise opponent folded at start of game (could update opponent modeling here)           
-
-
 
 
 
