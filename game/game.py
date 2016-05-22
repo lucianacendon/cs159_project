@@ -11,6 +11,7 @@ import sys
 import os
 
 from Agent import Agent
+from Agent import Agent_1
 from deck import Deck
 from player import Player
 from strategy import Strategy
@@ -39,6 +40,7 @@ class Game:
         self.community_card_count = community_card_count
         self.player_count = 0
         self.players_in_game = 0
+        self.opp_actions = []
 
         # Rotate blinds
         self.iteration = 0
@@ -164,6 +166,7 @@ class Game:
                         call=self.call,
                         raise_amt=RAISE_AMT)
 
+                    self.opp_actions.append(action)
                 
 
                 if action == 'C':
@@ -324,7 +327,7 @@ class Game:
         if len(self.ingame_players) > 1:
             hand_scores = []
             self.showCommunityCards()       
-            
+             
             for player_id in self.ingame_players:
                 hand_scores.append(self.players[player_id].getHandScore())
 
@@ -338,7 +341,7 @@ class Game:
 
             print "Winners :"
             print self.ingame_players
-            print ''
+            print '' 
 
         # End game
         self.updatePlayerEarnings()
@@ -351,39 +354,46 @@ class Game:
 
 def main(): 
 
-    numGames = 10000
+    numGames = 100000
     n_players = 2
     buy_in = 20
 
     P = Player(Strategy.randomStrategy, buy_in, n_players)
-    A = Agent(buy_in, n_players)
+    A = Agent_1(buy_in, n_players)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
     game.add_player(P)
     game.add_player(A)    
 
-    # p_earnings = []
-    # a_earnings = []
+    p_earnings = []
+    a_earnings = []
     # it = []
 
     for i in xrange(numGames):
         game.deck = Deck()
+
         game.playGame()
 
-        # p_earnings.append(P.earnings / (i + 1))
-        # a_earnings.append(A.earnings / (i + 1))
-        # it.append(i)
+        p_earnings.append(P.earnings / (i + 1))
+        a_earnings.append(A.earnings / (i + 1))
+       # it.append(i)
 
         if (i + 1) % 5 == 0:
             game.resetFunds(buy_in)
 
-    # plt.plot(it,p_earnings,label='Opponent')
-    # plt.plot(it,a_earnings,label='Agent')
-    # plt.legend()
-    # plt.xlabel('N. iterations')
-    # plt.ylabel('Earnings')
 
-    # plt.show()
+    # Useful for debugging / analysis: writing opponent actions to a file for control
+    # with open('opp_actions.txt','w') as f:
+    #    for a in game.opp_actions:
+    #        f.write(str(a) + '  ')
+
+    plt.semilogx(p_earnings,label='Opponent')
+    plt.semilogx(a_earnings,label='Agent')
+    plt.legend()
+    plt.xlabel('N. iterations')
+    plt.ylabel('Earnings')
+
+    plt.show()
     print "Final Opponent Earnings:" + str(P.earnings / numGames)
     print "Final Agent Earnings: " + str(A.earnings / numGames)
 
