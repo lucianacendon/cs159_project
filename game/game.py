@@ -1,5 +1,6 @@
 import collections
 import itertools
+import operator
 from collections import OrderedDict
 from collections import deque
 
@@ -101,6 +102,23 @@ class Game:
 
         return preflop_odds
     
+
+    def create_hand_ranking(self):
+        """
+            Returns a list of handtags in increasing order of strenght (based on pre-flop odds)
+        """
+        i = 0
+        handtag_rank = {}
+        with open('./data/preflop_odds.txt', 'rb') as csv_file:
+            reader = csv.reader(csv_file, delimiter='\t')
+            for row in reader:
+                if i > 0:
+                    handtag_rank[row[0]] = row[self.player_count - 1]
+                i += 1
+        
+        handtag_rank = sorted(handtag_rank.items(), key=operator.itemgetter(1))
+        return handtag_rank
+
 
     def setBlinds(self):
         
@@ -299,43 +317,90 @@ class Game:
 
 def main(): 
 
-    numGames = 100000
-    n_players = 4
+    action_numbers = {'F' : -1, 'C' : 0, 'R' : 1}
+    numGames = 1000000
+    n_players = 2
     buy_in = 20
 
-    #P = Player(Strategy.randomStrategy, buy_in, n_players)
+    P = Player(Strategy.aggressiveStrategy, buy_in, n_players)
     A = Agent_1(buy_in, n_players)
-  #  P1 = Agent_1(buy_in, n_players)
-    P1 = Player(Strategy.randomStrategy, buy_in, n_players)
-    P2 = Player(Strategy.BlufflyProbabilisticStrategy, buy_in, n_players)  
-    P3 = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)
-
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
-    game.add_player(P1)
-    game.add_player(A)   
-    game.add_player(P2) 
-    game.add_player(P3)
+    game.add_player(P)
+    game.add_player(A)
 
-    p1_earnings = []
-    p2_earnings = []
-    p3_earnings = []
-    a_earnings = []
-    # it = []
+    for j in xrange(1):
+        for i in xrange(numGames):
+            # print "============= Game %d =============" % i
+            game.deck = Deck()
 
-    for i in xrange(numGames):
-        game.deck = Deck()
+            # game.testPlayGame()
+            game.playGame()
 
-        game.playGame()
+            if (i + 1) % 5 == 0:
+                game.resetFunds(buy_in)
 
-        p1_earnings.append(P1.earnings / (i + 1))
-        p2_earnings.append(P2.earnings / (i + 1))
-        p3_earnings.append(P3.earnings / (i + 1))
-        a_earnings.append(A.earnings / (i + 1))
-       # it.append(i)
+        print "Final Opponent Earnings:" + str(P.earnings / numGames)
+        print "Final Agent Earnings: " + str(A.earnings / numGames)  
+        # print A.Q  
 
-        if (i + 1) % 5 == 0:
-            game.resetFunds(buy_in)
+    #     P.earnings = 0
+    #     A.earnings = 0        
+
+    hand_ranking = game.create_hand_ranking()
+
+    # (call value + raise value) / 2 for each hand
+    # This is calculated for the aggressive opponent, so the previous action will always be 'R'
+    Q = A.Q
+    learned_hand_values = []
+    learned_best_actions = []
+    for h in hand_ranking:
+        state_tag = (h[0], ('R',))
+        if state_tag in Q:
+            action_values = Q[state_tag]
+            sorted_actions = sorted(action_values.items(), key=operator.itemgetter(1), reverse=True)
+
+        
+            # print Q[state_tag]
+            learned_hand_values.append(sorted_actions[0][1])
+            learned_best_actions.append(action_numbers[sorted_actions[0][0]])
+
+    # print learned_hand_values
+
+
+    plt.plot(learned_hand_values)
+    plt.xlabel('Hands (ordered by pre-flop odds)')
+    plt.ylabel('Learned Value of Hand (value of max action given hand)')
+    plt.title('Learned Hand Strength (%d iterations)' % numGames)
+    plt.savefig('Learned Hand Strength (%d iterations)' % numGames, bbox_inches='tight')
+    plt.clf()
+
+    plt.plot(learned_best_actions, 'o')
+    plt.xlabel('Hands (ordered by pre-flop odds)')
+    plt.ylabel('Learned Best Action for Hand (F = -1, C = 1, R = 1)')
+    plt.title('Learned Best Actions (%d iterations)' % numGames)
+    plt.savefig('Learned Best Actions (%d iterations)' % numGames, bbox_inches='tight')
+    plt.clf()
+
+
+    # P.earnings = 0
+    # A.earnings = 0
+
+    # p_earnings = []
+    # a_earnings = []
+    # # it = []
+
+    # for i in xrange(numGames):
+    #     game.deck = Deck()
+
+    #     game.playGame()
+
+    #     p_earnings.append(P.earnings / (i + 1))
+    #     a_earnings.append(A.earnings / (i + 1))
+    #    # it.append(i)
+
+    #     if (i + 1) % 5 == 0:
+    #         game.resetFunds(buy_in)
 
 
     # Useful for debugging / analysis: writing opponent actions to a file for control
@@ -343,86 +408,18 @@ def main():
     #    for a in game.opp_actions:
     #        f.write(str(a) + '  ')
 
-    plt.semilogx(p1_earnings,label='Opponent1')
-    plt.semilogx(p2_earnings,label='Opponent2')
-    plt.semilogx(p3_earnings,label='Opponent3')
-    plt.semilogx(a_earnings,label='Agent')
-    plt.legend()
-    plt.xlabel('N. iterations')
-    plt.ylabel('Earnings')
+    # plt.semilogx(p_earnings,label='Opponent')
+    # plt.semilogx(a_earnings,label='Agent')
+    # plt.legend()
+    # plt.xlabel('N. iterations')
+    # plt.ylabel('Earnings')
 
-    plt.show()
-    print "Final Opponent1 Earnings:" + str(P1.earnings / numGames)
-    print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
-    print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
-    print "Final Agent Earnings: " + str(A.earnings / numGames)
-
+    # plt.show()
+    # print "Final Opponent Earnings:" + str(P.earnings / numGames)
+    # print "Final Agent Earnings: " + str(A.earnings / numGames)
 
 if __name__ == '__main__':
     main()
-
-    """    
-
-    def testPlayGame(self):
-
-        self.initializePlayerCards()
-        print "Initial states :"
-        print "[current funds, bet amount, action]"
-        self.printPlayerStates()
-        print ''
-        
-        self.setBlinds()
-        print "After blinds :"
-        print "[current funds, bet amount, action]"        
-        self.printPlayerStates()
-        print ''
-
-        # print "$$$$$$$$$$$$$$$$$$$$$$$$", self.player_count
-
-        self.placeBets()
-        print "After betting round :"
-        print "[current funds, bet amount, action]"
-        self.printPlayerStates()
-        print ''
-
-        self.getCurrentPlayers()
-        print "Players in after betting :"
-        print self.ingame_players
-        print ''
-
-        # Move onto post flop round
-        if len(self.ingame_players) > 1:
-            hand_scores = []
-            self.showCommunityCards()       
-             
-            for player_id in self.ingame_players:
-                hand_scores.append(self.players[player_id].getHandScore())
-
-            best_score = min(hand_scores)
-            winners = []
-            for i in xrange(len(hand_scores)):
-                if hand_scores[i] == best_score:
-                    winners.append(self.ingame_players[i])
-
-            self.ingame_players = winners
-
-            print "Winners :"
-            print self.ingame_players
-            print '' 
-
-        # End game
-        self.updatePlayerEarnings()
-
-        print "After updating earnings :"
-        print "[current funds, bet amount, action]"        
-        self.printPlayerStates()
-        print ''
-        """
-
-
-
-
-
 
 
 

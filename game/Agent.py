@@ -62,7 +62,7 @@ class Agent_1(Agent):
         self.prev_state = None
         self.prev_action = None                                 
         self.iterations_trained = 0
-        self.e = 0.2 # value for e-greedy
+        self.e = 0.3 # value for e-greedy
         self.alpha = 0.1 # learning rate (will decrease with time)
         
 
@@ -135,7 +135,9 @@ class Agent_1(Agent):
         # slow-down learning
         if self.iterations_trained % 10000 == 0:
             self.alpha *= .99
-            self.e *= .88
+
+        if self.iterations_trained % 50000 == 0:
+            self.e *= .7
 
         return action
 
