@@ -315,6 +315,7 @@ def main():
     game.add_player(P1)
     game.add_player(A)   
     game.add_player(P2) 
+    game.add_player(P3)
 
     p1_earnings = []
     p2_earnings = []
