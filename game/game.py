@@ -296,6 +296,73 @@ class Game:
         self.updatePlayerEarnings()
 
 
+
+def main(): 
+
+    numGames = 100000
+    n_players = 4
+    buy_in = 20
+
+    #P = Player(Strategy.randomStrategy, buy_in, n_players)
+    A = Agent_1(buy_in, n_players)
+  #  P1 = Agent_1(buy_in, n_players)
+    P1 = Player(Strategy.randomStrategy, buy_in, n_players)
+    P2 = Player(Strategy.BlufflyProbabilisticStrategy, buy_in, n_players)  
+    P3 = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)
+
+
+    game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
+    game.add_player(P1)
+    game.add_player(A)   
+    game.add_player(P2) 
+    game.add_player(P3)
+
+    p1_earnings = []
+    p2_earnings = []
+    p3_earnings = []
+    a_earnings = []
+    # it = []
+
+    for i in xrange(numGames):
+        game.deck = Deck()
+
+        game.playGame()
+
+        p1_earnings.append(P1.earnings / (i + 1))
+        p2_earnings.append(P2.earnings / (i + 1))
+        p3_earnings.append(P3.earnings / (i + 1))
+        a_earnings.append(A.earnings / (i + 1))
+       # it.append(i)
+
+        if (i + 1) % 5 == 0:
+            game.resetFunds(buy_in)
+
+
+    # Useful for debugging / analysis: writing opponent actions to a file for control
+    # with open('opp_actions.txt','w') as f:
+    #    for a in game.opp_actions:
+    #        f.write(str(a) + '  ')
+
+    plt.semilogx(p1_earnings,label='Opponent1')
+    plt.semilogx(p2_earnings,label='Opponent2')
+    plt.semilogx(p3_earnings,label='Opponent3')
+    plt.semilogx(a_earnings,label='Agent')
+    plt.legend()
+    plt.xlabel('N. iterations')
+    plt.ylabel('Earnings')
+
+    plt.show()
+    print "Final Opponent1 Earnings:" + str(P1.earnings / numGames)
+    print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
+    print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
+    print "Final Agent Earnings: " + str(A.earnings / numGames)
+
+
+if __name__ == '__main__':
+    main()
+
+    """    
+
     def testPlayGame(self):
 
         self.initializePlayerCards()
@@ -350,58 +417,7 @@ class Game:
         print "[current funds, bet amount, action]"        
         self.printPlayerStates()
         print ''
-
-
-def main(): 
-
-    numGames = 100000
-    n_players = 2
-    buy_in = 20
-
-    P = Player(Strategy.randomStrategy, buy_in, n_players)
-    A = Agent_1(buy_in, n_players)
-
-    game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
-    game.add_player(P)
-    game.add_player(A)    
-
-    p_earnings = []
-    a_earnings = []
-    # it = []
-
-    for i in xrange(numGames):
-        game.deck = Deck()
-
-        game.playGame()
-
-        p_earnings.append(P.earnings / (i + 1))
-        a_earnings.append(A.earnings / (i + 1))
-       # it.append(i)
-
-        if (i + 1) % 5 == 0:
-            game.resetFunds(buy_in)
-
-
-    # Useful for debugging / analysis: writing opponent actions to a file for control
-    # with open('opp_actions.txt','w') as f:
-    #    for a in game.opp_actions:
-    #        f.write(str(a) + '  ')
-
-    plt.semilogx(p_earnings,label='Opponent')
-    plt.semilogx(a_earnings,label='Agent')
-    plt.legend()
-    plt.xlabel('N. iterations')
-    plt.ylabel('Earnings')
-
-    plt.show()
-    print "Final Opponent Earnings:" + str(P.earnings / numGames)
-    print "Final Agent Earnings: " + str(A.earnings / numGames)
-
-
-if __name__ == '__main__':
-    main()
-
-
+        """
 
 
 
