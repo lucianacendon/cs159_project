@@ -50,14 +50,16 @@ class Player():
         self.states[1] = 0
         self.states[2] = None
 
-    # update states upon losing a round
+    # update states upon losing a round, returns loss
     # 0 = Current funds, 1 = bet amount, 2 = Action
     def loseUpdate(self):
         loss = self.states[1]
 
         self.earnings -= loss
         self.states[1] = 0
-        self.states[2] = None  
+        self.states[2] = None
+
+        return -loss  
 
 
     # return tag summarizing two card hand as a string 

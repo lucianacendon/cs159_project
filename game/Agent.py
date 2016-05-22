@@ -25,7 +25,7 @@ class Agent(Player):
         self.prev_action = None
         self.iterations_trained = 0
 
-        self.e = 0.25 # value for e-greedy
+        self.e = 0.1 # value for e-greedy
         self.alpha = 0.1 # learning rate (will decrease with time)
         
         self.evaluator = Evaluator()
@@ -38,9 +38,8 @@ class Agent(Player):
     def loadQ(self, fName):
         pass
 
-    # For now, this is just training the Q-function using e-greedy. Eventually, we should have two functions, one that trains
-    # and one that picks the optimal action that we use for testing.
     # We could combine all the state information into one state using a tuple (to make it Q[state][action]) vs. splitting it up
+    # Learn Q-function using e-greedy. 
     def getAction(self, game, call, raise_amt):
         cur_funds = self.states[0]
         cur_bet = self.states[1]
@@ -55,7 +54,6 @@ class Agent(Player):
 
         # can't raise
         if raise_bet > cur_funds:
-            # you can call automatically 
             action_set = ['F', 'C']
 
         # can do anything
@@ -105,10 +103,59 @@ class Agent(Player):
         self.prev_action = action
         self.iterations_trained += 1
 
-        self.alpha *= .99
-        self.e *= 0.99
+
+        # slow-down learning
+        if self.iterations_trained % 1000 == 0:
+            self.alpha *= .99
+            # self.e *= .99
 
         return action
+
+
+    # get best action according to learned Q function (no exploration)
+    def getActionTest(self, game, call, raise_amt):
+        cur_funds = self.states[0]
+        cur_bet = self.states[1]
+        diff = call - cur_bet
+        raise_bet = diff + raise_amt
+
+        action = None
+
+        # can't call 
+        if diff > cur_funds:
+            action = 'F'
+
+        # can't raise
+        if raise_bet > cur_funds:
+            action_set = ['F', 'C']
+
+        # can do anything
+        else:   
+            action_set = ['F', 'C', 'R']        
+
+        hand_tag = self.getHandTag()
+        other_player_actions = tuple(game.last_player_actions)
+        cur_state = (hand_tag, other_player_actions)
+
+
+        if cur_state in self.Q:
+            action_values = self.Q[cur_state]
+            sorted_actions = sorted(action_values.items(), key=operator.itemgetter(1), reverse=True) # actions ordered by value
+
+            # action has not been decided yet
+            if not action: 
+                for a in sorted_actions:
+                    # a : (action, value)
+                    if a[0] in action_set: 
+                        action = a[0]
+                        break
+
+        else:
+            action = random.choice(action_set)
+
+        return action
+
+
 
 
     # update states upon winning a round
@@ -119,13 +166,16 @@ class Agent(Player):
 
     # update states upon losing a round
     def loseUpdate(self):
-        Player.loseUpdate(self)
-        self.QReward(self.states[1])
+        loss = Player.loseUpdate(self)
+        # print "loss", loss
+        self.QReward(loss)
 
 
     # update Q funciton using reward gained or lost
     def QReward(self, reward):
         if self.prev_state:
+            # print reward
+            # print self.alpha * (reward - self.Q[self.prev_state][self.prev_action])
             self.Q[self.prev_state][self.prev_action] += self.alpha * (reward - self.Q[self.prev_state][self.prev_action])
 
             self.prev_state = None
