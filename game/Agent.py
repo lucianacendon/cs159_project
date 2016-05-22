@@ -139,8 +139,6 @@ class Agent_1(Agent):
 
         return action
 
-class Agent_2(Agent):
-    pass
 
     # get best action according to learned Q function (no exploration)
     def getActionTest(self, game, call, raise_amt):
@@ -184,5 +182,10 @@ class Agent_2(Agent):
             action = random.choice(action_set)
 
         return action
+
+class Agent_2(Agent):
+    pass
+
+
 
 
