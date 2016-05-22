@@ -20,7 +20,6 @@ class Agent(Player):
         self.id = ID
         self.Q = {}
 
-
     def updateAlpha(self):
         n = self.iterations_trained / 1000
         self.alpha *= (.99 ** n)
@@ -29,18 +28,15 @@ class Agent(Player):
     def loadQ(self, fName):
         pass
 
-
     # update states upon winning a round
     def winUpdate(self, winnings):
         Player.winUpdate(self, winnings)
         self.QReward(winnings)
 
-
     # update states upon losing a round
     def loseUpdate(self):
         Player.loseUpdate(self)
         self.QReward(self.states[1])
-
 
     # update Q funciton using reward gained or lost
     def QReward(self, reward):
@@ -57,7 +53,7 @@ class Agent_1(Agent):
     def __init__(self, buy_in, n_players, ID=0):
         Agent.__init__(self, buy_in, n_players, ID=0)
         self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
-
+        
         self.prev_state = None
         self.prev_action = None                                 
         self.iterations_trained = 0
@@ -138,5 +134,7 @@ class Agent_1(Agent):
 
         return action
 
+class Agent_2(Agent):
+    pass
 
 
