@@ -188,7 +188,8 @@ class Agent_1(Agent):
 
 class Agent_2(Agent):
     """
-        This agent takes into account also the actions and respective cards of players in the last game 
+        This agent is very similar to agent 1, but it also take into account also the actions 
+        and respective cards of players in the last game 
     """
     def __init__(self, buy_in, n_players, ID=0):
         Agent.__init__(self, buy_in, n_players, ID=0)
