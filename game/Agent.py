@@ -188,9 +188,6 @@ class Agent_1(Agent):
         return action
 
 
-
-
-
 class Agent_2(Agent):
     """
         This agent is very similar to agent 1, but it also take into account also the actions 
@@ -245,6 +242,7 @@ class Agent_2(Agent):
         cur_state = (hand_tag, tuple(action_cards))
 
         r = random.uniform(0, 1)
+
 
         if cur_state in self.Q:
             action_values = self.Q[cur_state]    # Contains the value of each action given the current state
@@ -360,12 +358,13 @@ class Agent_3(Agent_1):
 
 
         if self.prev_state:
-            # learning update
+            # Learning update 
             self.Q[self.prev_state][self.prev_action] += self.alpha * (max_action_value - self.Q[self.prev_state][self.prev_action])
 
         self.prev_state = cur_state
         self.prev_action = action
         self.iterations_trained += 1
+
 
         # Slowing-down learning
         if self.iterations_trained % 10000 == 0:
