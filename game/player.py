@@ -44,9 +44,10 @@ class Player():
     # update states upon winning a round
     # 0 = Current funds, 1 = bet amount, 2 = Action
     def winUpdate(self, winnings):
-        self.states[0] += winnings
-        self.earnings += winnings
+        # accounting for how much you yourself put into the pot
+        self.earnings += (winnings - self.states[1])
 
+        self.states[0] += winnings
         self.states[1] = 0
         self.states[2] = None
 
