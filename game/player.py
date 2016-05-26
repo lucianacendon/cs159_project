@@ -11,7 +11,14 @@ from deuces import Evaluator
 
 
 
-cardRank = {'A' : 14, 'K' : 13, 'Q' : 12, 'J' : 11, 'T' : 10, '9' : 9, '8' : 8, '7' : 7, '6' : 6, '5' : 5, '4' : 4, '3' : 3, '2' : 2}
+cardRank = {'A' : 12, 'K' : 11, 'Q' : 10, 'J' : 9, 'T' : 8, '9' : 7, '8' : 6, '7' : 5, '6' : 4, '5' : 3, '4' : 2, '3' : 1, '2' : 0}
+suitRank = {'s' : 3, 'c' : 2, 'd' : 1, 'h' : 0}
+
+# c is a card: c[0]- cardNum, c[1] - cardSuit
+def getCardNum(c):
+    print c
+    print (4 * cardRank[c[0]]) + suitRank[c[1]]
+    return (4 * cardRank[c[0]]) + suitRank[c[1]]
 
 class Player():
     # strategy is a function
@@ -86,7 +93,7 @@ class Player():
                 return card1Num + card2Num + 'o'
 
             else:
-                return card2Num + card1Num + 'o'          
+                return card2Num + card1Num + 'o'
 
 
     def get_preflop_odds(self,preflop_odds_table,hole_cards):

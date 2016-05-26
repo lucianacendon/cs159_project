@@ -2,6 +2,7 @@ import collections
 import itertools
 import random
 import operator
+import numpy as np
 
 from math import exp
 
@@ -17,7 +18,8 @@ from deuces import Evaluator
 class Agent(Player):
 
     def __init__(self, buy_in, n_players, ID=0):
-        self.n_opponents = n_players-1
+        self.n_opponents = n_players - 1
+        self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
         self.earnings = 0
         self.id = ID
         self.Q = {}
@@ -49,7 +51,6 @@ class Agent(Player):
 class Agent_1(Agent):
     def __init__(self, buy_in, n_players, ID=0):
         Agent.__init__(self, buy_in, n_players, ID=0)
-        self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
         
         self.prev_state = None
         self.prev_action = None                                 
@@ -195,7 +196,6 @@ class Agent_2(Agent):
     """
     def __init__(self, buy_in, n_players, ID=0):
         Agent.__init__(self, buy_in, n_players, ID=0)
-        self.states = [buy_in, 0, None]  # [current funds, bet amount, action]
 
         self.prev_state = None
         self.prev_action = None  
@@ -286,9 +286,6 @@ class Agent_2(Agent):
         return action
 
 
-
-
-
 # picks an action with probability proportional to its value
 def weightedChoice(action_values):
     weights = []
@@ -374,6 +371,113 @@ class Agent_3(Agent_1):
             self.e *= .7
 
         return action
+
+
+
+class Agent_4(Agent_1):
+    """
+        Agent_1, but also incorporates the pot into the state
+    """
+
+    def __init__(self, buy_in, n_players, ID=0):
+        Agent_1.__init__(self, buy_in, n_players, ID=0)
+
+        self.e = 0.2 # value for e-greedy
+
+    def getAction(self, game, call, raise_amt):
+        cur_funds = self.states[0]
+        cur_bet = self.states[1]
+        diff = call - cur_bet
+        raise_bet = diff + raise_amt
+
+        action = None
+
+        # can't call 
+        if diff > cur_funds:
+            action = 'F'
+
+        # can't raise
+        if raise_bet > cur_funds:
+            action_set = ['F', 'C']
+
+        # can do anything
+        else:   
+            action_set = ['F', 'C', 'R']        
+
+        hand_tag = self.getHandTag()
+        other_player_actions = tuple(game.last_player_actions)
+        cur_state = (hand_tag, game.pot, other_player_actions) # also incorporate pot
+
+
+        r = random.uniform(0, 1)
+
+        if cur_state in self.Q:
+            action_values = self.Q[cur_state]
+            sorted_actions = sorted(action_values.items(), key=operator.itemgetter(1), reverse=True) # actions ordered by value
+        
+            max_action_value = sorted_actions[0][1]
+
+            action = weightedChoice(action_values)
+
+
+            # # e-greedy exploration
+            # if r < self.e:
+            #     action = random.choice(action_set)
+
+        else:
+            self.Q[cur_state] = {'F' : 0, 'C' : 0, 'R' : 0}
+            
+            if not action:
+                action = random.choice(action_set)
+
+            max_action_value = 0
+
+
+        if self.prev_state:
+            # Learning update 
+            self.Q[self.prev_state][self.prev_action] += self.alpha * (max_action_value - self.Q[self.prev_state][self.prev_action])
+
+        self.prev_state = cur_state
+        self.prev_action = action
+        self.iterations_trained += 1
+
+
+        # Slowing-down learning
+        if self.iterations_trained % 200000 == 0:
+            self.alpha *= .99
+
+        if self.iterations_trained % 500000 == 0:
+            self.e *= .7
+
+        return action
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
