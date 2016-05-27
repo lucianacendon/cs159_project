@@ -94,7 +94,7 @@ class NNAgent(Agent):
         other_player_actions = tuple(game.last_player_actions)
         # indicating the opp. actions
         for i in xrange(self.n_opponents):
-            state_action_vector[52 + self.num_opp_actions * i + action_numbers[other_player_actions[i]]]
+            state_action_vector[52 + self.num_opp_actions * i + action_numbers[other_player_actions[i]]] = 1
     
         num_state_features = 52 + (self.num_opp_actions * self.n_opponents)
         
