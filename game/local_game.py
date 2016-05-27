@@ -15,6 +15,9 @@ from Agent import Agent
 from Agent import Agent_1
 from Agent import Agent_3
 from Agent import Agent_4
+
+from NNAgent import NNAgent
+
 from deck import Deck
 from player import Player
 from strategy import Strategy
@@ -371,12 +374,13 @@ class Game:
 def main(): 
 
     numIterations = 1
-    numGames = 10000000
+    numGames = 100000
     n_players = 2
     buy_in = 20
 
     A = Agent_1(buy_in, n_players)
-    A2 = Agent_4(buy_in, n_players)
+    A2 = NNAgent(buy_in, n_players)
+    # A2 = Agent_4(buy_in, n_players)
 
     # P1 = Player(Strategy.aggressiveStrategy, buy_in, n_players)
     # P2 = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)

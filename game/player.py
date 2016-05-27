@@ -12,13 +12,6 @@ from deuces import Evaluator
 
 
 cardRank = {'A' : 12, 'K' : 11, 'Q' : 10, 'J' : 9, 'T' : 8, '9' : 7, '8' : 6, '7' : 5, '6' : 4, '5' : 3, '4' : 2, '3' : 1, '2' : 0}
-suitRank = {'s' : 3, 'c' : 2, 'd' : 1, 'h' : 0}
-
-# c is a card: c[0]- cardNum, c[1] - cardSuit
-def getCardNum(c):
-    print c
-    print (4 * cardRank[c[0]]) + suitRank[c[1]]
-    return (4 * cardRank[c[0]]) + suitRank[c[1]]
 
 class Player():
     # strategy is a function

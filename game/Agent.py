@@ -14,7 +14,6 @@ from deuces import Card
 from deuces import Evaluator
 
 
-
 class Agent(Player):
 
     def __init__(self, buy_in, n_players, ID=0):

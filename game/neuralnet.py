@@ -37,6 +37,11 @@ class NeuralNetwork:
         self.training_labels = train_labels
         self.input_layer_size = input_layer_size
 
+    def updateData(self, train_data=None, train_labels=None, input_layer_size=None):
+        self.training_data = train_data
+        self.training_labels = train_labels
+        self.input_layer_size = input_layer_size
+
     def load_dataset(self):
 
         if sys.version_info[0] == 2:
