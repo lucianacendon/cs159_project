@@ -70,11 +70,9 @@ class NNAgent(Agent):
         diff = call - cur_bet
         raise_bet = diff + raise_amt
 
-        action = None
-
         # can't call 
         if diff > cur_funds:
-            action = 'F'
+            action_set = ['F']
 
         # can't raise
         if raise_bet > cur_funds:
@@ -98,33 +96,29 @@ class NNAgent(Agent):
     
         num_state_features = 52 + (self.num_opp_actions * self.n_opponents)
 
-        max_action_value = 0
-        
-        if not action:
+        max_action_value = -np.inf
+        max_legal_action_value = -np.inf # might not be able to do every action
+
+        # choose best possible action
+        for (i, a) in enumerate(actions):
+            state_action_vector[num_state_features + i] = 1
+            action_value = self.Q(state_action_vector)
+
+            if action_value > max_action_value: 
+                max_action_value = action_value
             
-            r = random.uniform(0, 1)
-            # e-greedy exploration
-            if r < self.e:
-                action = random.choice(action_set)
-            else:    
-                max_action_value = -np.inf
-                max_legal_action_value = -np.inf # might not be able to do every action
+            if a in action_set:
+                if action_value > max_legal_action_value:
+                    max_legal_action_value = action_value
+                    action = a
 
-                # choose best possible action
-                for (i, a) in enumerate(actions):
-                    state_action_vector[num_state_features + i] = 1
-                    action_value = self.Q(state_action_vector)
-
-                    if action_value > max_action_value: 
-                        max_action_value = action_value
-                    
-                    if a in action_set:
-                        if action_value > max_legal_action_value:
-                            max_legal_action_value = action_value
-                            action = a
-
-                    state_action_vector[num_state_features + i] = 0            
-                
+            state_action_vector[num_state_features + i] = 0   
+        
+        r = random.uniform(0, 1)
+        # e-greedy exploration
+        if r < self.e:
+            action = random.choice(action_set)    
+         
         # print action
         state_action_vector[num_state_features + action_numbers[action]] = 1
 
