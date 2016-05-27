@@ -374,7 +374,7 @@ class Game:
 def main(): 
 
     numIterations = 1
-    numGames = 100000
+    numGames = 1000000
     n_players = 2
     buy_in = 20
 

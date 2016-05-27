@@ -42,7 +42,7 @@ class NNAgent(Agent):
 
         self.num_opp_actions = 5
         self.num_feature_elements = 52 + (self.num_opp_actions * self.n_opponents) + 3
-        self.batch_size = 50000 # could have this as a parameter
+        self.batch_size = 60000 # could have this as a parameter
 
         # initialize neural network
         self.network = NeuralNetwork(test_mnist=False, input_layer_size=self.num_feature_elements)
@@ -62,7 +62,7 @@ class NNAgent(Agent):
 
     def trainQ(self):
         self.network.updateData(train_data=self.X_train, train_labels=self.y_train, input_layer_size=self.num_feature_elements)
-        self.network.train(num_epochs=10)
+        self.network.train(num_epochs=50)
 
     def getAction(self, game, call, raise_amt):
         cur_funds = self.states[0]
@@ -97,16 +97,16 @@ class NNAgent(Agent):
             state_action_vector[52 + self.num_opp_actions * i + action_numbers[other_player_actions[i]]] = 1
     
         num_state_features = 52 + (self.num_opp_actions * self.n_opponents)
+
+        max_action_value = 0
         
         if not action:
-            # net has not been trained yet
-            if self.iteration_num < self.batch_size:
-                max_action_value = 0
+            
+            r = random.uniform(0, 1)
+            # e-greedy exploration
+            if r < self.e:
                 action = random.choice(action_set)
-
-            else:
-                r = random.uniform(0, 1)
-                
+            else:    
                 max_action_value = -np.inf
                 max_legal_action_value = -np.inf # might not be able to do every action
 
@@ -123,14 +123,7 @@ class NNAgent(Agent):
                             max_legal_action_value = action_value
                             action = a
 
-                    state_action_vector[num_state_features + i] = 0
-
-                # e-greedy exploration
-                if r < self.e:
-                    action = random.choice(action_set)
-
-        else:
-            max_action_value = 0
+                    state_action_vector[num_state_features + i] = 0            
                 
         # print action
         state_action_vector[num_state_features + action_numbers[action]] = 1
