@@ -136,12 +136,11 @@ class NNAgent(Agent):
         state_action_vector[num_state_features + action_numbers[action]] = 1
 
         if self.prev_state_action_vector is not None:
-            self.X_train[self.iteration_num] = self.prev_state_action_vector
-            self.y_train[self.iteration_num] = np.array(max_action_value)
+            self.X_train[self.iteration_num % self.batch_size] = self.prev_state_action_vector
+            self.y_train[self.iteration_num % self.batch_size] = np.array(max_action_value)
 
             self.iteration_num += 1
-            if self.iteration_num == self.batch_size:
-                self.iteration_num = 0
+            if self.iteration_num % self.batch_size == 0:
                 self.trainQ()
 
         self.prev_state_action_vector = state_action_vector
@@ -151,12 +150,11 @@ class NNAgent(Agent):
     # add reward to training set
     def QReward(self, reward):
         if self.prev_state_action_vector is not None:
-            self.X_train[self.iteration_num] = self.prev_state_action_vector
-            self.y_train[self.iteration_num] = np.array(reward)
+            self.X_train[self.iteration_num % self.batch_size] = self.prev_state_action_vector
+            self.y_train[self.iteration_num % self.batch_size] = np.array(reward)
 
             self.iteration_num += 1
-            if self.iteration_num == self.batch_size:
-                self.iteration_num = 0
+            if self.iteration_num % self.batch_size == 0:
                 self.trainQ()
 
             self.prev_state_action_vector = None
