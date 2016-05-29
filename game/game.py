@@ -131,7 +131,7 @@ class Game:
             self.call = self.small_blind
 
             self.last_player_actions.append('S')
-       #     self.recent_player_actions_list[small_blind_id] = 'S'
+            self.recent_player_actions_list[small_blind_id] = 'S'
 
         if self.big_blind > 0:
 
@@ -147,7 +147,7 @@ class Game:
             self.call = self.big_blind
 
             self.last_player_actions.append('B')
-        #    self.recent_player_actions_list[big_blind_id] = 'B'
+            self.recent_player_actions_list[big_blind_id] = 'B'
 
         return self.pot, self.call
 
@@ -337,34 +337,35 @@ class Game:
 
 def main(): 
 
+    n_players = N_PLAYERS   # needs to be defined like this because of some game initialization variables
     action_numbers = {'F' : -1, 'C' : 0, 'R' : 1}
     numGames = 100000
-    n_players = N_PLAYERS   # needs to be defined like this because of some game initialization variables
+    #numGames = 50
     buy_in = 20
 
 
     #P = Player(Strategy.randomStrategy, buy_in, n_players)
     A1 = Agent_1(buy_in, n_players)
     A2 = Agent_2(buy_in, n_players)
-#    P1 = Player(Strategy.aggressiveStrategy, buy_in, n_players)
-#    P2 = Player(Strategy.BlufflyProbabilisticStrategy, buy_in, n_players)  
-#    P3 = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)
+ #   P1 = Player(Strategy.aggressiveStrategy, buy_in, n_players)
+ #   P2 = Player(Strategy.BlufflyProbabilisticStrategy, buy_in, n_players)  
+ #   P3 = Player(Strategy.randomStrategy, buy_in, n_players)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
     
     # Adding Agents and Players to game
     game.add_player(A1)
     game.add_player(A2)
-#    game.add_player(P1)
+ #   game.add_player(P1)
  #   game.add_player(P2)
  #   game.add_player(P3)
 
     # Creating earnings lists
     a1_earnings = []
     a2_earnings = []
-#    p1_earnings = []
-#    p2_earnings = []
-#    p3_earnings = []
+  #  p1_earnings = []
+ #   p2_earnings = []
+ #   p3_earnings = []
 
 
     for i in xrange(numGames):
@@ -376,9 +377,9 @@ def main():
         a1_earnings.append(A1.earnings / (i + 1))
         a2_earnings.append(A2.earnings / (i + 1))
 
-#        p1_earnings.append(P1.earnings / (i + 1))
-#        p2_earnings.append(P2.earnings / (i + 1))
-#        p3_earnings.append(P3.earnings / (i + 1))
+   #     p1_earnings.append(P1.earnings / (i + 1))
+   #     p2_earnings.append(P2.earnings / (i + 1))
+   #     p3_earnings.append(P3.earnings / (i + 1))
 
         if (i + 1) % 5 == 0:
             game.resetFunds(buy_in)
@@ -386,9 +387,9 @@ def main():
 
     plt.semilogx(a1_earnings,label='Agent 1')
     plt.semilogx(a2_earnings,label='Agent 2')
-#    plt.semilogx(p1_earnings,label='Aggressive Opponent')
-#    plt.semilogx(p2_earnings,label='Opponent2')
-#    plt.semilogx(p3_earnings,label='Opponent3')
+ #   plt.semilogx(p1_earnings,label='Aggressive Opponent')
+ #   plt.semilogx(p2_earnings,label='Bluffy Opponent')
+ #   plt.semilogx(p3_earnings,label='Random Opponent')
 
     plt.legend()
     plt.xlabel('N. iterations')
@@ -398,9 +399,9 @@ def main():
 
     print "Final Agent 1 Earnings: " + str(A1.earnings / numGames)
     print "Final Agent 2 Earnings: " + str(A2.earnings / numGames)
-#    print "Final Opponent1 Earnings:" + str(P1.earnings / numGames)
-#    print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
-#    print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
+  #  print "Final Opponent1 Earnings:" + str(P1.earnings / numGames)
+  #  print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
+  #  print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
 
      
     ######################## Hand Ranking ######################## 
