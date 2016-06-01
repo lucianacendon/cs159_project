@@ -374,7 +374,7 @@ class Game:
 def main(): 
 
     numIterations = 1
-    numGames = 10000000
+    numGames = 1000000
     n_players = 2
     buy_in = 20
 
@@ -382,7 +382,7 @@ def main():
     A3 = Agent_3(buy_in, n_players)
     A4 = Agent_4(buy_in, n_players)
 
-    P = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)
+    P = Player(Strategy.TemperamentalProbabilisticStrategy, buy_in, n_players)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
 
@@ -408,12 +408,12 @@ def main():
 
 
 
-    plt.semilogx(p_earnings,label='RationalProbabilisticStrategy Player')
+    plt.semilogx(p_earnings,label='TemperamentalProbabilisticStrategy Player')
     plt.semilogx(a_earnings,label='Agent 3')
     plt.legend()
     plt.xlabel('Num. iterations')
     plt.ylabel('Avg. Earnings')
-    plt.savefig('png/agent3vsRationalProbabilisticStrategy.png')
+    plt.savefig('png/agent3vsTemperamentalProbabilisticStrategy.png')
 
 
 
