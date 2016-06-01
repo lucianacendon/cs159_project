@@ -27,7 +27,7 @@ from deuces import Evaluator
 
 action_numbers = {'F' : -1, 'C' : 0, 'R' : 1}
 
-N_PLAYERS = 3   # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
+N_PLAYERS = 2   # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
                 # respective strategies
 
 # Game Variables:
@@ -48,7 +48,7 @@ class Game:
         self.player_count = 0
         self.players_in_game = 0
         self.opp_actions = []
-        self.n_games = 0
+      #  self.n_games = 0
 
         # Rotate blinds
         self.iteration = 0
@@ -67,6 +67,8 @@ class Game:
         # Keeps track of opponents actions
         self.raise_tracking = [0] * (N_PLAYERS) 
         self.call_tracking = [0] * (N_PLAYERS)
+        self.prev_game_call_track = [0] * (N_PLAYERS)
+        self.prev_game_raise_track = [0] * (N_PLAYERS)
 
 
     def add_player(self, player):
@@ -92,10 +94,11 @@ class Game:
 
         # Statistics on the actions of each player during previous game (current game has incomplete information as not all players took an action yet)
         self.prev_game_call_track = self.call_tracking 
+     #   print self.prev_game_call_track
         self.prev_game_raise_track = self.raise_tracking 
-        
-        self.raise_tracking = [0] * (N_PLAYERS) 
-        self.call_tracking = [0] * (N_PLAYERS)
+     #   print self.prev_game_raise_track
+        print 'blash'
+
  
         for i in range(self.player_count):
             self.players[i].setHoleCards(self.deck.getPreFlop(
@@ -145,6 +148,7 @@ class Game:
         if self.small_blind > 0:
 
             state = self.players[(self.dealer + 1) % self.player_count].states
+
             state[0] -= self.small_blind
             state[1] += self.small_blind
             state[2] = None 
@@ -153,13 +157,12 @@ class Game:
             self.call = self.small_blind
 
             self.last_player_actions.append('S')
-            self.call_tracking[cur_player_index] = float((cur_player.n_call)/(self.n_games))  # Updates call rate
-            self.raise_tracking[cur_player_index] = float((cur_player.n_raise)/(self.n_games))  # Updates raise rate
 
         if self.big_blind > 0:
 
             state = self.players[
                 (self.dealer + 2) % self.player_count].states
+
             state[0] -= self.big_blind
             state[1] += self.big_blind
             state[2] = None
@@ -168,8 +171,6 @@ class Game:
             self.call = self.big_blind
 
             self.last_player_actions.append('B')
-            self.call_tracking[cur_player_index] = float((cur_player.n_call)/(self.n_games))  # Updates call rate
-            self.raise_tracking[cur_player_index] = float((cur_player.n_raise)/(self.n_games))  # Updates raise rate
 
         return self.pot, self.call
 
@@ -220,17 +221,21 @@ class Game:
                         self.pot += diff
                         cur_state[2] = 'C'
                         self.last_player_actions.append('C')
+
                         cur_player.n_call += 1
-                        self.call_tracking[cur_player_index] = float((cur_player.n_call)/(self.n_games))  # Updates call rate
-                        self.raise_tracking[cur_player_index] = float((cur_player.n_raise)/(self.n_games))  # Updates raise rate
+                        cur_player.n_games += 1
+                        self.call_tracking[cur_player_index] = self.getRateNumber(float((cur_player.n_call)/(cur_player.n_games)))  # Updates call rate
+                        self.raise_tracking[cur_player_index] = self.getRateNumber(float((cur_player.n_raise)/(cur_player.n_games)))  # Updates raise rate
 
 
                 # here we could also potentially set the bet amount to 0
                 if action == 'F':
                     cur_state[2] = 'F'
                     self.last_player_actions.append('F')
-                    self.call_tracking[cur_player_index] = float((cur_player.n_call)/(self.n_games))  # Updates call rate 
-                    self.raise_tracking[cur_player_index] = float((cur_player.n_raise)/(self.n_games))  # Updates raise rate
+
+                    cur_player.n_games += 1
+                    self.call_tracking[cur_player_index] = self.getRateNumber(float((cur_player.n_call)/(cur_player.n_games)))  # Updates call rate 
+                    self.raise_tracking[cur_player_index] = self.getRateNumber((cur_player.n_raise)/(cur_player.n_games))  # Updates raise rate
                     self.players_in_game -= 1
 
                 # need to decide raising conventions
@@ -244,9 +249,11 @@ class Game:
                     self.call += RAISE_AMT
                     cur_state[2] = 'R'
                     self.last_player_actions.append('R')
+
                     cur_player.n_raise += 1
-                    self.call_tracking[cur_player_index] = float((cur_player.n_call)/(self.n_games))  # Updates call rate
-                    self.raise_tracking[cur_player_index] = float((cur_player.n_raise+1)/(self.n_games))  # Updates raise rate
+                    cur_player.n_games += 1
+                    self.call_tracking[cur_player_index] = self.getRateNumber(float((cur_player.n_call)/(cur_player.n_games)))  # Updates call rate
+                    self.raise_tracking[cur_player_index] = self.getRateNumber(float((cur_player.n_raise)/(cur_player.n_games)))  # Updates raise rate
 
             # update recent actions to indicate player is out of game 'O' (he has folded in a previous round)
             else:
@@ -260,6 +267,20 @@ class Game:
             cur_state = self.players[cur_player_index].states
             allowed_rounds -= 1
 
+    def getRateNumber(self,rate):
+        """
+            This function places the call and raise rate into 4 discrete categories with the scope of minimizing the dimension of Q-table
+        """
+        if rate <= 0.3:
+            range_rate = 1
+        elif rate > 0.3 and rate <= 0.5:
+            range_rate = 2
+        elif rate > 0.5 and rate <= 0.75:
+            range_rate = 3
+        else:
+            range_rate = 4
+
+        return range_rate
     
     def getCurrentPlayers(self):
 
@@ -397,11 +418,12 @@ class Game:
 def main(): 
 
     numIterations = 1
-    numGames = 100000
+    numGames = 1000000
     n_players = 2
     buy_in = 20
 
-    A = Agent_5(buy_in, n_players)
+  #  A1 = Agent_1(buy_in, n_players)
+    A5 = Agent_5(buy_in, n_players)
   #  A2 = NNAgent_v2(buy_in, n_players)
  #   A2 = Agent_4(buy_in, n_players)
 
@@ -410,32 +432,31 @@ def main():
 
  #   P2 = NNAgent(buy_in, n_players)
 
-
+ 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
 
-    game.add_player(A)
-    game.add_player(P1)
+#    game.add_player(A1)
+    game.add_player(A5)
 
-#    game.add_player(P1)
+    game.add_player(P1)
     # game.add_player(P2)
 
 
-    a_earnings = []
-    p1_earnings = []
+    a1_earnings = []
+    a5_earnings = []
     a_earnings = []
 
     for j in xrange(numIterations):
         for i in xrange(numGames):
             # print "============= Game %d =============" % i
-            game.n_games += 1
             game.deck = Deck()
 
             # game.testPlayGame()
             game.playGame()
 
     #        p1_earnings.append(P1.earnings / (i + 1))
-            a_earnings.append(A.earnings / (i + 1))
-            p1_earnings.append(P1.earnings / (i + 1))
+            a1_earnings.append(P1.earnings / (i + 1))
+            a5_earnings.append(A5.earnings / (i + 1))
             
 
 
@@ -445,17 +466,17 @@ def main():
    #     print "Final P1 Earnings:" + str(P1.earnings #/ numGames)
         # print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
         # print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
-        print "Final P2 Earnings: " + str(A.earnings / numGames)
+        print "Final A1 Earnings: " + str(P1.earnings / numGames)
         # print "Final Agent2 Earnings: " + str(A2.earnings / numGames) 
-        print "Final AgentNN Earnings: " + str(P1.earnings / numGames) 
+        print "Final A5 Earnings: " + str(A5.earnings / numGames) 
         # print A.Q 
         # print 
         # print A2.Q
 
 
 #    plt.semilogx(p1_earnings,label='Aggressive')
-    plt.semilogx(a_earnings,label='Agent')
-    plt.semilogx(p1_earnings,label='Player 1')
+    plt.semilogx(a1_earnings,label='Aggressive')
+    plt.semilogx(a5_earnings,label='Agent 5')
     plt.legend()
     plt.xlabel('N. iterations')
     plt.ylabel('Earnings')

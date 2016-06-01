@@ -19,10 +19,15 @@ class Player():
     def __init__(self, strategy, buy_in, n_players, ID=0):
         self.getAction = strategy
         self.n_opponents = n_players-1
-        self.earnings = buy_in
+        self.earnings = 0.0
         self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
         self.id = ID
         self.evaluator = Evaluator()
+
+        self.n_raise = 0
+        self.n_call = 0
+        self.n_games = 0
+        self.action = None
 
     def setHoleCards(self, cards):
         assert len(cards) == 2
