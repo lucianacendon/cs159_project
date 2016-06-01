@@ -510,7 +510,7 @@ class Agent_5(Agent):
 
         cur_state = (hand_tag, other_player_actions, tuple(prev_game_call_rate), tuple(prev_game_raise_rate))
 
-        #print cur_state
+        print cur_state
 
         r = random.uniform(0, 1)
 

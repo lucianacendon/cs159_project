@@ -27,7 +27,7 @@ from deuces import Evaluator
 
 action_numbers = {'F' : -1, 'C' : 0, 'R' : 1}
 
-N_PLAYERS = 2   # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
+N_PLAYERS = 2  # TODO: incorporate this into the game when initializing the players. Let the user decide how many players and its 
                 # respective strategies
 
 # Game Variables:
@@ -97,7 +97,6 @@ class Game:
      #   print self.prev_game_call_track
         self.prev_game_raise_track = self.raise_tracking 
      #   print self.prev_game_raise_track
-        print 'blash'
 
  
         for i in range(self.player_count):
@@ -422,7 +421,7 @@ def main():
     n_players = 2
     buy_in = 20
 
-  #  A1 = Agent_1(buy_in, n_players)
+   # A1 = Agent_1(buy_in, n_players)
     A5 = Agent_5(buy_in, n_players)
   #  A2 = NNAgent_v2(buy_in, n_players)
  #   A2 = Agent_4(buy_in, n_players)
@@ -435,7 +434,7 @@ def main():
  
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
 
-#    game.add_player(A1)
+ #   game.add_player(A1)
     game.add_player(A5)
 
     game.add_player(P1)
