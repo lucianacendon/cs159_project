@@ -19,7 +19,7 @@ class Player():
     def __init__(self, strategy, buy_in, n_players, ID=0):
         self.getAction = strategy
         self.n_opponents = n_players-1
-        self.earnings = buy_in
+        self.earnings = 0.0
         self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
         self.id = ID
         self.evaluator = Evaluator()

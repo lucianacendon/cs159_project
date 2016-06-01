@@ -16,8 +16,7 @@ from Agent import Agent_1
 from Agent import Agent_3
 from Agent import Agent_4
 
-from NNAgent import NNAgent
-from NNAgent_v2 import NNAgent_v2
+
 
 from deck import Deck
 from player import Player
@@ -375,104 +374,49 @@ class Game:
 def main(): 
 
     numIterations = 1
-    numGames = 100000
+    numGames = 10000000
     n_players = 2
     buy_in = 20
 
-   # A = Agent_1(buy_in, n_players)
-    A2 = NNAgent_v2(buy_in, n_players)
-    # A2 = Agent_4(buy_in, n_players)
+    A1 = Agent_1(buy_in, n_players)
+    A3 = Agent_3(buy_in, n_players)
+    A4 = Agent_4(buy_in, n_players)
 
- #   P1 = Player(Strategy.aggressiveStrategy, buy_in, n_players)
- #   P2 = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)
-
-    P2 = NNAgent(buy_in, n_players)
-
+    P = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
 
-    game.add_player(P2)
-    game.add_player(A2)
+    game.add_player(P)
+    game.add_player(A3)
 
-#    game.add_player(P1)
-    # game.add_player(P2)
-
-
-    p1_earnings = []
-    p2_earnings = []
+    p_earnings = []
     a_earnings = []
 
-    for j in xrange(numIterations):
-        for i in xrange(numGames):
-            # print "============= Game %d =============" % i
-            game.deck = Deck()
+    for i in xrange(numGames):
+        game.deck = Deck()
 
-            # game.testPlayGame()
-            game.playGame()
+        game.playGame()
 
-    #        p1_earnings.append(P1.earnings / (i + 1))
-            p2_earnings.append(P2.earnings / (i + 1))
-            a_earnings.append(A2.earnings / (i + 1))            
+        p_earnings.append(P.earnings / (i + 1))
+        a_earnings.append(A3.earnings / (i + 1))            
 
-            if (i + 1) % 5 == 0:
-                game.resetFunds(buy_in)
+        if (i + 1) % 5 == 0:
+            game.resetFunds(buy_in)
 
-   #     print "Final P1 Earnings:" + str(P1.earnings #/ numGames)
-        # print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
-        # print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
-        print "Final P2 Earnings: " + str(P2.earnings / numGames)
-        # print "Final Agent2 Earnings: " + str(A2.earnings / numGames) 
-        print "Final AgentNN Earnings: " + str(A2.earnings / numGames) 
-        # print A.Q 
-        # print 
-        # print A2.Q
+    print "Final P2 Earnings: " + str(P.earnings / numGames)
+    print "Final Agent 3 Earnings: " + str(A3.earnings / numGames) 
 
 
-#    plt.semilogx(p1_earnings,label='Aggressive')
-    plt.semilogx(p2_earnings,label='Rational')
-    plt.semilogx(a_earnings,label='Agent NN')
+
+    plt.semilogx(p_earnings,label='RationalProbabilisticStrategy Player')
+    plt.semilogx(a_earnings,label='Agent 3')
     plt.legend()
-    plt.xlabel('N. iterations')
-    plt.ylabel('Earnings')
-    plt.show()
-
-    # game.make_hand_strenght_graphs(A, numGames)
+    plt.xlabel('Num. iterations')
+    plt.ylabel('Avg. Earnings')
+    plt.savefig('png/agent3vsRationalProbabilisticStrategy.png')
 
 
-    # P.earnings = 0
-    # A.earnings = 0
 
-    # p_earnings = []
-    # a_earnings = []
-    # # it = []
-
-    # for i in xrange(numGames):
-    #     game.deck = Deck()
-
-    #     game.playGame()
-
-    #     p_earnings.append(P.earnings / (i + 1))
-    #     a_earnings.append(A.earnings / (i + 1))
-    #    # it.append(i)
-
-    #     if (i + 1) % 5 == 0:
-    #         game.resetFunds(buy_in)
-
-
-    # Useful for debugging / analysis: writing opponent actions to a file for control
-    # with open('opp_actions.txt','w') as f:
-    #    for a in game.opp_actions:
-    #        f.write(str(a) + '  ')
-
-    # plt.semilogx(p_earnings,label='Opponent')
-    # plt.semilogx(a_earnings,label='Agent')
-    # plt.legend()
-    # plt.xlabel('N. iterations')
-    # plt.ylabel('Earnings')
-
-    # plt.show()
-    # print "Final Opponent Earnings:" + str(P.earnings / numGames)
-    # print "Final Agent Earnings: " + str(A.earnings / numGames)
 
 if __name__ == '__main__':
     main()

@@ -14,6 +14,8 @@ import os
 from Agent import Agent
 from Agent import Agent_1
 from Agent import Agent_2
+from Agent import Agent_3
+from Agent import Agent_4
 from deck import Deck
 from player import Player
 from strategy import Strategy
@@ -344,28 +346,22 @@ def main():
     buy_in = 20
 
 
-    #P = Player(Strategy.randomStrategy, buy_in, n_players)
     A1 = Agent_1(buy_in, n_players)
     A2 = Agent_2(buy_in, n_players)
- #   P1 = Player(Strategy.aggressiveStrategy, buy_in, n_players)
- #   P2 = Player(Strategy.BlufflyProbabilisticStrategy, buy_in, n_players)  
- #   P3 = Player(Strategy.randomStrategy, buy_in, n_players)
+    A4 = Agent_4(buy_in, n_players)
+    A3 = Agent_3(buy_in, n_players)
+    P3 = Player(Strategy.TemperamentalProbabilisticStrategy, buy_in, n_players)
 
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
     
     # Adding Agents and Players to game
-    game.add_player(A1)
-    game.add_player(A2)
- #   game.add_player(P1)
- #   game.add_player(P2)
- #   game.add_player(P3)
+    game.add_player(A3)
+    game.add_player(P3)
+
 
     # Creating earnings lists
     a1_earnings = []
     a2_earnings = []
-  #  p1_earnings = []
- #   p2_earnings = []
- #   p3_earnings = []
 
 
     for i in xrange(numGames):
@@ -374,72 +370,25 @@ def main():
         game.playGame()
 
         # Appending earning values
-        a1_earnings.append(A1.earnings / (i + 1))
-        a2_earnings.append(A2.earnings / (i + 1))
-
-   #     p1_earnings.append(P1.earnings / (i + 1))
-   #     p2_earnings.append(P2.earnings / (i + 1))
-   #     p3_earnings.append(P3.earnings / (i + 1))
+        a1_earnings.append(P3.earnings / (i + 1))
+        a2_earnings.append(A3.earnings / (i + 1))
 
         if (i + 1) % 5 == 0:
             game.resetFunds(buy_in)
 
 
-    plt.semilogx(a1_earnings,label='Agent 1')
-    plt.semilogx(a2_earnings,label='Agent 2')
- #   plt.semilogx(p1_earnings,label='Aggressive Opponent')
- #   plt.semilogx(p2_earnings,label='Bluffy Opponent')
- #   plt.semilogx(p3_earnings,label='Random Opponent')
+    plt.semilogx(a1_earnings,label='TemperamentalProbabilisticStrategy Player')
+    plt.semilogx(a2_earnings,label='Agent 3')
 
     plt.legend()
-    plt.xlabel('N. iterations')
-    plt.ylabel('Earnings')
-
+    plt.title('Agent vs TemperamentalProbabilisticStrategy Player')
+    plt.xlabel('Num. Iterations')
+    plt.ylabel('Avg. Earnings')
     plt.show()
 
-    print "Final Agent 1 Earnings: " + str(A1.earnings / numGames)
-    print "Final Agent 2 Earnings: " + str(A2.earnings / numGames)
-  #  print "Final Opponent1 Earnings:" + str(P1.earnings / numGames)
-  #  print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
-  #  print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
+    print "Final TemperamentalProbabilisticStrategy Player Earnings: " + str(P3.earnings / numGames)
+    print "Final Agent Earnings: " + str(A3.earnings / numGames)
 
-     
-    ######################## Hand Ranking ######################## 
-
-    hand_ranking = game.create_hand_ranking()
-
-    # (call value + raise value) / 2 for each hand
-    # This is calculated for the aggressive opponent, so the previous action will always be 'R'
-    Q = A1.Q
-    learned_hand_values = []
-    learned_best_actions = []
-    for h in hand_ranking:
-        state_tag = (h[0], ('R',))
-        if state_tag in Q:
-            action_values = Q[state_tag]
-            sorted_actions = sorted(action_values.items(), key=operator.itemgetter(1), reverse=True)
-
-        
-            # print Q[state_tag]
-            learned_hand_values.append(sorted_actions[0][1])
-            learned_best_actions.append(action_numbers[sorted_actions[0][0]])
-
-    # print learned_hand_values
-
-
-    plt.plot(learned_hand_values)
-    plt.xlabel('Hands (ordered by pre-flop odds)')
-    plt.ylabel('Learned Value of Hand (value of max action given hand)')
-    plt.title('Learned Hand Strength (%d iterations)' % numGames)
-    plt.savefig('Learned Hand Strength (%d iterations)' % numGames, bbox_inches='tight')
-    plt.clf()
-
-    plt.plot(learned_best_actions, 'o')
-    plt.xlabel('Hands (ordered by pre-flop odds)')
-    plt.ylabel('Learned Best Action for Hand (F = -1, C = 1, R = 1)')
-    plt.title('Learned Best Actions (%d iterations)' % numGames)
-    plt.savefig('Learned Best Actions (%d iterations)' % numGames, bbox_inches='tight')
-    plt.clf()
 
 if __name__ == '__main__':
     main()

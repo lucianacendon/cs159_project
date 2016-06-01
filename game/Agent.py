@@ -19,7 +19,7 @@ class Agent(Player):
     def __init__(self, buy_in, n_players, ID=0):
         self.n_opponents = n_players - 1
         self.states = [buy_in, 0, None]   # [current funds, bet amount, action]
-        self.earnings = 0
+        self.earnings = 0.0
         self.id = ID
         self.Q = {}
         self.evaluator = Evaluator()
