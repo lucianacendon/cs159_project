@@ -70,6 +70,9 @@ class Game:
         self.prev_game_call_track = [0] * (N_PLAYERS)
         self.prev_game_raise_track = [0] * (N_PLAYERS)
 
+        # Create table containing
+        self.hand_strength = self.create_hand_strength_dict()
+
 
     def add_player(self, player):
         """
@@ -120,6 +123,44 @@ class Game:
 
         return preflop_odds
     
+    def create_hand_strength_dict(self):
+        hand_strength = {}
+        count = 1
+        with open('./data/tag_list.txt', 'rb') as csv_file:
+            reader = csv.reader(csv_file, delimiter='\t')
+            for row in reader:
+                if count <= 13:
+                    hand_strength[row[0]] = 1
+                elif count > 13 and count <= 26:
+                    hand_strength[row[0]] = 2
+                elif count > 27 and count <= 39:
+                    hand_strength[row[0]] = 3   
+                elif count > 39 and count <= 52:
+                    hand_strength[row[0]] = 4 
+                elif count > 52 and count <= 65:
+                    hand_strength[row[0]] = 5 
+                elif count > 65 and count <= 78:
+                    hand_strength[row[0]] = 6 
+                elif count > 78 and count <= 91:
+                    hand_strength[row[0]] = 7 
+                elif count > 91 and count <= 104:
+                    hand_strength[row[0]] = 8 
+                elif count > 104 and count <= 117:
+                    hand_strength[row[0]] = 9 
+                elif count > 117 and count <= 130:
+                    hand_strength[row[0]] = 10
+                elif count > 130 and count <= 143:
+                    hand_strength[row[0]] = 11
+                elif count > 143 and count <= 156:
+                    hand_strength[row[0]] = 12
+                else:
+                    hand_strength[row[0]] = 13
+                count += 1
+        return hand_strength
+
+
+    def get_hand_strength(self, tag):
+        return self.hand_strength[tag]
 
     def create_hand_ranking(self):
         """
@@ -421,12 +462,12 @@ def main():
     n_players = 2
     buy_in = 20
 
-   # A1 = Agent_1(buy_in, n_players)
-    A5 = Agent_5(buy_in, n_players)
+    A1 = Agent_1(buy_in, n_players)
+    A6 = Agent_6(buy_in, n_players)
   #  A2 = NNAgent_v2(buy_in, n_players)
  #   A2 = Agent_4(buy_in, n_players)
 
-    P1 = Player(Strategy.aggressiveStrategy, buy_in, n_players)
+ #   P1 = Player(Strategy.aggressiveStrategy, buy_in, n_players)
  #   P2 = Player(Strategy.RationalProbabilisticStrategy, buy_in, n_players)
 
  #   P2 = NNAgent(buy_in, n_players)
@@ -435,15 +476,15 @@ def main():
     game = Game(small_blind=1, raise_amounts=1, starting_card_count=2)
 
  #   game.add_player(A1)
-    game.add_player(A5)
+    game.add_player(A1)
 
-    game.add_player(P1)
+    game.add_player(A6)
     # game.add_player(P2)
 
 
     a1_earnings = []
-    a5_earnings = []
-    a_earnings = []
+    a6_earnings = []
+  #  a_earnings = []
 
     for j in xrange(numIterations):
         for i in xrange(numGames):
@@ -454,8 +495,8 @@ def main():
             game.playGame()
 
     #        p1_earnings.append(P1.earnings / (i + 1))
-            a1_earnings.append(P1.earnings / (i + 1))
-            a5_earnings.append(A5.earnings / (i + 1))
+            a1_earnings.append(A1.earnings / (i + 1))
+            a6_earnings.append(A6.earnings / (i + 1))
             
 
 
@@ -465,17 +506,17 @@ def main():
    #     print "Final P1 Earnings:" + str(P1.earnings #/ numGames)
         # print "Final Opponent2 Earnings:" + str(P2.earnings / numGames)
         # print "Final Opponent3 Earnings:" + str(P3.earnings / numGames)
-        print "Final A1 Earnings: " + str(P1.earnings / numGames)
+        print "Final A1 Earnings: " + str(A1.earnings / numGames)
         # print "Final Agent2 Earnings: " + str(A2.earnings / numGames) 
-        print "Final A5 Earnings: " + str(A5.earnings / numGames) 
+        print "Final A6 Earnings: " + str(A6.earnings / numGames) 
         # print A.Q 
         # print 
         # print A2.Q
 
 
 #    plt.semilogx(p1_earnings,label='Aggressive')
-    plt.semilogx(a1_earnings,label='Aggressive')
-    plt.semilogx(a5_earnings,label='Agent 5')
+    plt.semilogx(a1_earnings,label='Agent 1')
+    plt.semilogx(a6_earnings,label='Agent 6')
     plt.legend()
     plt.xlabel('N. iterations')
     plt.ylabel('Earnings')

@@ -556,3 +556,99 @@ class Agent_5(Agent):
 
         return action
 
+
+class Agent_6(Agent):
+    # Same as Agent 5 (opponent modeling), but sees its hand strength (split into 13 categories) instead of its 169 hand tags #
+
+    def __init__(self, buy_in, n_players, ID=0):
+        Agent.__init__(self, buy_in, n_players, ID=0)
+
+        self.prev_state = None
+        self.prev_action = None  
+        self.iterations_trained = 0
+        self.e = 0.3  # E value for e-greedy
+        self.alpha = 0.1  # learning rate (decrease with time)
+
+        self.n_call = 0
+        self.n_raise = 0
+        self.n_games = 0 
+
+    def QReward(self, reward):
+        if self.prev_state:
+
+            self.Q[self.prev_state][self.prev_action] += self.alpha * (reward - self.Q[self.prev_state][self.prev_action])
+
+            self.prev_state = None
+            self.prev_action = None 
+
+    
+    def getAction(self, game, call, raise_amt):
+        cur_funds = self.states[0]
+        cur_bet = self.states[1]
+        diff = call - cur_bet
+        raise_bet = diff + raise_amt
+
+        action = None
+        
+        if diff > cur_funds:  # can't call 
+            action = 'F'   
+        if raise_bet > cur_funds:   # can't raise
+            action_set = ['F', 'C']
+        else:    # can do anything
+            action_set = ['F', 'C', 'R']   
+
+        hand_strength = game.get_hand_strength(self.getHandTag())
+        other_player_actions = tuple(game.last_player_actions)
+
+        # Actions and respective cards of all Opponents in previous game
+        # The indexing removes the agent itself from the list
+        prev_game_call_rate = game.prev_game_call_track[:self.id] + game.prev_game_call_track[(self.id+1):] 
+        prev_game_raise_rate = game.prev_game_raise_track[:self.id] + game.prev_game_raise_track[(self.id+1):] 
+
+        cur_state = (hand_strength, other_player_actions, tuple(prev_game_call_rate), tuple(prev_game_raise_rate))
+
+        print cur_state
+
+        r = random.uniform(0, 1)
+
+
+        if cur_state in self.Q:
+            action_values = self.Q[cur_state]    # Contains the value of each action given the current state
+            sorted_actions = sorted(action_values.items(), key=operator.itemgetter(1), reverse=True)  # actions ordered by value
+            max_action_value = sorted_actions[0][1]  # Contains the maximum Q-value across all different actions 
+
+            # if action has not been decided yet (still 'None')
+            if not action:
+                for a in sorted_actions:  # a = (action, value)
+                    if a[0] in action_set:
+                        action = a[0]      # maximum value action is the first one (actions are sorted)
+                        break
+
+                # E-greedy exploration
+                if r < self.e:
+                    action = random.choice(action_set)
+
+        else:
+            self.Q[cur_state] = {'F' : 0, 'C' : 0, 'R' : 0}  # initialize Q-value for this state
+
+            if not action:
+                action = random.choice(action_set)  # Randomly explores any action when there is not a good option to follow 
+            max_action_value = 0
+
+
+        if self.prev_state:
+            # Learning update
+            self.Q[self.prev_state][self.prev_action] += self.alpha * (max_action_value - self.Q[self.prev_state][self.prev_action])
+
+        self.prev_state = cur_state
+        self.prev_action = action
+        self.iterations_trained += 1 
+
+        # Slowing-down learning
+        if self.iterations_trained % 10000 == 0:
+            self.alpha *= .99
+
+        if self.iterations_trained % 50000 == 0:
+            self.e *= .7
+
+        return action
